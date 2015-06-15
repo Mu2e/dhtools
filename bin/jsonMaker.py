@@ -1124,9 +1124,9 @@ def writeJson(par,files):
 
         #
         # the fts area has subdirectories to manage large
-        # numbers of files.  Pick a 2-digit subdir based on file's name
+        # numbers of files.  Pick a 3-digit subdir based on file's name
         #
-        hdir = "%02d"%( hash(file.baseName)%100 )
+        hdir = "%03d"%( hash(file.baseName)%1000 )
         
         #
         # move data file to the FTS area, if requested
