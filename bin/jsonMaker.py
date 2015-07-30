@@ -109,7 +109,7 @@ must be setup.
 
   Requires python 2.7 or greater for subprocess.check_output and 
      2.6 or greater for json module.
-  version 2.1
+  version 2.2
     """
 
 ##############################################################
@@ -134,12 +134,14 @@ class Parms:
         self.pair = "none"
         self.reName = ""
         self.file_family = ""
-        self.fts = "/pnfs/mu2e/scratch/fts"
+        self.fts  = "/pnfs/mu2e/scratch/fts"
+        self.ftsp = "/pnfs/mu2e/persistent/fts"
         self.res_fcl = "$MU2E_BASE_RELEASE/Analyses/test/runEventSubRun.fcl"
         self.validDataTiers = ["raw","rec","ntd","ext","rex","xnt"]
         self.validMCTiers  = ["cnf","sim","mix","dig","mcs","nts"]
         self.validOthTiers = ["log","bck","etc"]
-        self.validExtensions = ["art","root","tar","tgz","txt","log","fcl"]
+        self.validExtensions = \
+            ["art","root","tar","tgz","txt","log","fcl","mid"]
         self.validFF = ["phy-sim","phy-nts","phy-etc",
                         "usr-sim","usr-nts","usr-etc","tst-cos"]
         self.validGenerator = ["beam","stopped_particle","cosmic","mix"]
@@ -440,6 +442,9 @@ def buildJsonName(par,file,jp):
     if 'file_name' in jp:
         # file name in json was wrong, that shouldn"t happen
         if jp['file_name'] != dname:
+            if par.verbose>4:
+                print "ERROR file name did not match json",\
+                jp['file_name'],"!=",dname
             file.state = file.state | file.BADFILENAME
     else:
         # not a problem, just add it
@@ -447,9 +452,15 @@ def buildJsonName(par,file,jp):
 
     tier = dname.split(".")[0]
     if not tier in par.validDataTiers+par.validMCTiers+par.validOthTiers :
+        if par.verbose>4:
+            print "ERROR data tier not in ",\
+                par.validDataTiers+par.validMCTiers+par.validOthTiers
         file.state = file.state | file.BADFILENAME
     if 'data_tier' in jp:
         if jp['data_tier'] != tier:
+            if par.verbose>4:
+                print "ERROR data tier did not match json",\
+                jp['data_tier'],"!=",tier
             file.state = file.state | file.BADFILENAME
     else:
         jp['data_tier'] = tier
@@ -458,6 +469,9 @@ def buildJsonName(par,file,jp):
     usern = dname.split(".")[1]
     if 'dh.owner' in jp:
         if jp['dh.owner'] != usern:
+            if par.verbose>4:
+                print "ERROR owner did not match json",\
+                jp['dh.owner'],"!=",usern
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.owner'] = usern
@@ -466,22 +480,34 @@ def buildJsonName(par,file,jp):
     if  len(dname.split(".")[2]) == 0 or \
         len(dname.split(".")[3]) == 0 or \
         (len(dname.split(".")[4]) == 0 and par.reName == ""):
+        if par.verbose>4:
+            print "ERROR description, configuration or sequencer is null",\
+                dname
         file.state = file.state | file.BADFILENAME
 
     if 'dh.description' in jp:
         if jp['dh.description'] != dname.split(".")[2]:
+            if par.verbose>4:
+                print "ERROR description did not match json",\
+                jp['dh.description'],"!=",dname.split(".")[2]
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.description'] = dname.split(".")[2]
 
     if 'dh.configuration' in jp:
         if jp['dh.configuration'] != dname.split(".")[3]:
+            if par.verbose>4:
+                print "ERROR configuration did not match json",\
+                jp['dh.configuration'],"!=",dname.split(".")[3]
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.configuration'] = dname.split(".")[3]
 
     if 'dh.sequencer' in jp:
         if jp['dh.sequencer'] != dname.split(".")[4]:
+            if par.verbose>4:
+                print "ERROR sequencer did not match json",\
+                jp['dh.sequencer'],"!=",dname.split(".")[4]
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.sequencer'] = dname.split(".")[4]
@@ -489,9 +515,15 @@ def buildJsonName(par,file,jp):
     ext = dname.split(".")[-1]
     if not ext in par.validExtensions :
         # only fixed type of extensions allowed
+        if par.verbose>4:
+            print "ERROR file extension",ext,"is not in ",\
+                par.validExtensions
         file.state = file.state | file.BADFILENAME
     if 'file_format' in jp:
         if jp['file_format'] != ext:
+            if par.verbose>4:
+                print "ERROR extension did not match json",\
+                jp['file_format'],"!=",ext
             file.state = file.state | file.BADFILENAME
     else:
         jp['file_format'] = ext
@@ -739,6 +771,8 @@ def buildJsonOther(par, file, jp):
     # check for file_family
     #
     if not par.file_family in par.validFF :
+        if par.verbose > 4:
+            print "ERROR - file family",par.file_family,"not in",par.validFF
         file.state = file.state | file.MISSINGFILEFAMILY
     # only mu2e should upload to phy-*
     if par.file_family[0:3]=="phy" and \
@@ -878,6 +912,8 @@ def parseCommandOptions(par,files):
 
     # the generic json file name, will be read below, if needed
     genericJsonFs = ""
+    # don't overwrite custom fts dir
+    lockFtsDir = False;
 
     try:
         opts, args = getopt.getopt(sys.argv[1:],
@@ -945,6 +981,7 @@ def parseCommandOptions(par,files):
         elif opt == "-o":
             # undocumented option for testing
             par.fts = arg
+            lockFtsDir = True
 
     if par.verbose >4:
         print  'Parsed command parameters:'
@@ -968,6 +1005,13 @@ def parseCommandOptions(par,files):
     if par.file_family == "":
         print "ERROR - file_family is required"
         sys.exit(2)
+
+    # if this is a phy* file family then switch to where those are
+    if par.file_family[0:3] == "phy" and not lockFtsDir:
+        par.fts = par.ftsp
+
+    if par.verbose >4:
+        print  'FTS directory set to',par.fts
 
     if par.pair not in ["file","dir","none"]:
         print "ERROR - pairing method must be 'file' or 'dir'"
