@@ -55,6 +55,7 @@ F4=`echo $DS | awk -F. '{print $4}'`
 F5=`echo $DS | awk -F. '{print $5}'`
 # sim.mu2e.example-beam-g4s1.1812a.art
 
-find /pnfs/mu2e/*/$F1/$F2/$F3/$F4/*/* -name "${F1}.${F2}.${F3}.${F4}.*.${F5}"
+find /pnfs/mu2e/*/$F1/$F2/$F3/$F4/*/* -name "${F1}.${F2}.${F3}.${F4}.*.${F5}" \
+  | sort -t/ -k11,11
 
 exit 0
