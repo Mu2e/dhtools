@@ -437,7 +437,8 @@ def buildJsonName(par,file,jp):
             dname.count(".")
         # if not enough dot fields, can't continue to parse
         if dname.count(".") < 5 :
-            return 1
+            print "ERROR filename has too few fields, can't continue"
+            sys.exit(2)
 
     if 'file_name' in jp:
         # file name in json was wrong, that shouldn"t happen
@@ -1306,7 +1307,7 @@ def writeJson(par,files):
             res = subprocess.check_output(cmd,shell=True)
         except:
             print "ERROR: failed to execute:"
-            print com
+            print cmd
             print traceback.print_exc()
             err = True
 
