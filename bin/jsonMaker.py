@@ -144,9 +144,10 @@ class Parms:
             ["art","root","tar","tgz","txt","log","fcl","mid"]
         self.validFF = ["phy-sim","phy-nts","phy-etc",
                         "usr-sim","usr-nts","usr-etc","tst-cos"]
-        self.validGenerator = ["beam","stopped_particle","cosmic","mix"]
+        self.validGenerator = ["beam","stopped_particle","cosmic","mix",
+                               "unknown"]
         self.validPrimary = ["proton","pbar","electron","muon","photon",
-                             "neutron","mix"]
+                             "neutron","mix","unknown"]
         self.resExeOk = False
         self.ifdhOk = False
         self.fileCount = 0
@@ -245,7 +246,7 @@ def insertFile(par,files,fnr):
     if par.verbose >4 :
         print 'Including '+fnr
 
-    cmd = "/bin/readlink -f "+fnr
+    cmd = "readlink -f "+fnr
     fn = ( subprocess.check_output(cmd,shell=True) ).strip()
 
     # separate out basename and extension
@@ -873,7 +874,7 @@ def buildJsonOther(par, file, jp):
     
     # this if prevents any data from being processed
     # without code to process run_types being inserted here
-    if jp['file_type'] not in ["mc","other"] :
+    if jp['file_type'] not in ["mc","other"]  and jp['file_format'] != "mid":
         file.state = file.state | file.NORUNTYPE
         if par.verbose>4 :
             print "ERROR - file_type is 'data', 'run_type' not defined"
@@ -1018,7 +1019,8 @@ def parseCommandOptions(par,files):
         print "ERROR - pairing method must be 'file' or 'dir'"
         sys.exit(2)
 
-    if par.groupCp and par.jsonDir == "":
+    par.jsonDir = par.jsonDir.lower()
+    if par.groupCp and (par.jsonDir == "" or par.jsonDir == "fts") :
         print "ERROR - when using -g to do a grouped ifdh, you must use -d "
         print "to specify a directory to temporarily hold the json files"
         sys.exit(2)
@@ -1162,9 +1164,20 @@ def writeJson(par,files):
             print sys.exc_info()[0]
             sys.exit(2)
            
+
+    # check if the fts is local (so OS-level commands can be used)
+    localFts = False
+    cmd = "[ -d "+par.fts+" ] && echo OK"
+    checkCmd = ( subprocess.check_output(cmd,shell=True) ).strip()
+    if checkCmd == "OK" :
+        localFts = True
+    if par.verbose >5 :
+        print  'localFts is ',localFts
+
     #
     # process each file
     #
+
     for file in files:
 
         #
@@ -1176,14 +1189,19 @@ def writeJson(par,files):
         #
         # move data file to the FTS area, if requested
         #
-        odir = par.fts+"/"+par.file_family+"/"+hdir
-        newfn = odir+"/"+file.baseName
+        dodir = par.fts+"/"+par.file_family+"/"+hdir
+        newfn = dodir+"/"+file.baseName
         if (par.copy or par.move) and not par.groupCp:
 
-            if par.copy:
-                cmd = "ifdh cp "+file.dataFileName+" "+newfn
+            if localFts:
+                cmd = ""
             else:
-                cmd = "ifdh mv "+file.dataFileName+" "+newfn
+                cmd = "ifdh "
+
+            if par.copy:
+                cmd = cmd+"cp "+file.dataFileName+" "+newfn
+            else:
+                cmd = cmd+"mv "+file.dataFileName+" "+newfn
 
             if par.execute:
                 if par.verbose>4:
@@ -1233,11 +1251,13 @@ def writeJson(par,files):
         #
         # create json output file in tmp area
         #
-        outfile = tempfile.NamedTemporaryFile(delete=False)
-        fnj = outfile.name
-        json.dump(file.json,outfile,indent=4)
-        outfile.write("\n")
-        outfile.close()
+        fnj = "tempfile"
+        if par.execute :
+            outfile = tempfile.NamedTemporaryFile(delete=False)
+            fnj = outfile.name
+            json.dump(file.json,outfile,indent=4)
+            outfile.write("\n")
+            outfile.close()
 
         #
         # move json to the output area
@@ -1254,20 +1274,33 @@ def writeJson(par,files):
                 odir = os.getcwd()+"/"+odir 
         newfnj = odir+"/"+file.baseName+".json"
 
+        # check if the output dir is local (so OS-level commands can be used)
+        localDir = False
+        cmd = "[ -d "+odir+" ] && echo OK"
+        checkCmd = ( subprocess.check_output(cmd,shell=True) ).strip()
+        if checkCmd == "OK" :
+            localDir = True
+        if par.verbose >5 :
+            print  'localDir is ',localDir
+
         #
         # the actual copy
         # it is a tiny file - use cp if possible, and 
-        # use ifdh if it includes dcache
+        # use ifdh if it is a remote copy to dcache
         #
-        if fnj[0:5]=="/pnfs" or newfnj[0:5]=="/pnfs":
-            cmd = "ifdh cp "
-        else:
+        if localDir :
             cmd = "cp "
+        else:
+            cmd = "ifdh cp "
 
         cmd = cmd+fnj+" "+newfnj
         cmd2 = "rm -f "+fnj
+
+        # this executes even if groupCp is requested 
+        # we have to get the json file off of tmp area
+        # to a holding area
         if par.execute:
-            if par.verbose>4:
+            if par.verbose>4 :
                 print "Executing: "+cmd
             try:
                 subprocess.check_call(cmd,shell=True)
@@ -1278,7 +1311,7 @@ def writeJson(par,files):
                     print "Exiting now..."
                 sys.exit(2)
         else:
-            if par.verbose>4:
+            if par.verbose>4 :
                 print "Would execute: "+cmd
 
         #
@@ -1301,7 +1334,7 @@ def writeJson(par,files):
     if par.groupCp and par.execute:
         res = ""
         cmd = "ifdh cp -f "+lfn
-        if par.verbose>5: 
+        if par.verbose>4: 
             print "in group copy, com="+cmd
         try:
             res = subprocess.check_output(cmd,shell=True)
