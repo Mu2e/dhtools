@@ -802,6 +802,11 @@ def buildJsonOther(par, file, jp):
     jp["file_size"] = os.path.getsize(file.dataFileName)
 
     #
+    # add sha256 hash
+    #
+    jp["dh.sha256"] = sha256OfFile(file.dataFileName)
+
+    #
     # add content_status, always good at upload
     #
     jp["content_status"] = "good";
@@ -906,6 +911,20 @@ def printSummary1(files):
     print '%4d json files'% nj
     print '%4d jsox files'% nx
     print '%4d files in error'% ne
+
+
+##############################################################
+# create sha256 hash of the data file
+##############################################################
+def sha256OfFile(filepath):
+    sha = hashlib.sha256()
+    with open(filepath, 'rb') as f:
+        # loop allows large files
+        while True:
+            block = f.read(2**10) # one-megabyte blocks.
+            if not block: break
+            sha.update(block)
+        return sha.hexdigest()
 
 ##############################################################
 # interpret the command line, fill the file list
@@ -1019,8 +1038,7 @@ def parseCommandOptions(par,files):
         print "ERROR - pairing method must be 'file' or 'dir'"
         sys.exit(2)
 
-    par.jsonDir = par.jsonDir.lower()
-    if par.groupCp and (par.jsonDir == "" or par.jsonDir == "fts") :
+    if par.groupCp and (par.jsonDir == "" or par.jsonDir.lower() == "fts") :
         print "ERROR - when using -g to do a grouped ifdh, you must use -d "
         print "to specify a directory to temporarily hold the json files"
         sys.exit(2)
