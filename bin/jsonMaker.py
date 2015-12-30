@@ -1185,7 +1185,7 @@ def writeJson(par,files):
 
     # check if the fts is local (so OS-level commands can be used)
     localFts = False
-    cmd = "[ -d "+par.fts+" ] && echo OK"
+    cmd = "if [ -d "+par.fts+" ]; then echo OK; fi"
     checkCmd = ( subprocess.check_output(cmd,shell=True) ).strip()
     if checkCmd == "OK" :
         localFts = True
