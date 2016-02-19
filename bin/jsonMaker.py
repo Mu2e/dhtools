@@ -109,7 +109,7 @@ must be setup.
 
   Requires python 2.7 or greater for subprocess.check_output and 
      2.6 or greater for json module.
-  version 2.2
+  version 2.3
     """
 
 ##############################################################
@@ -185,8 +185,21 @@ class UploadFile:
     errMess.append("failed to extract run/evt/sub from data file")
     nerr = nerr + 1
 
-    MISSINGMCREQUIRE   =  1<<nerr
-    errMess.append("MC file missing required MC fields")
+    MISSINGMCREQUIREGEN   =  1<<nerr
+    errMess.append("MC file missing required mc.generator_type field")
+    nerr = nerr + 1
+    MISSINGMCREQUIRESIM   =  1<<nerr
+    errMess.append("MC file missing required mc.simulation_stage field")
+    nerr = nerr + 1
+    MISSINGMCREQUIREPRM   =  1<<nerr
+    errMess.append("MC file missing required mc.primary_particle field")
+    nerr = nerr + 1
+
+    WRONGMCREQUIREGEN   =  1<<nerr
+    errMess.append("MC file mc.generator_type value is not valid")
+    nerr = nerr + 1
+    WRONGMCREQUIREPRM   =  1<<nerr
+    errMess.append("MC file mc.primary_particle value is not valid")
     nerr = nerr + 1
 
     MISSINGFILEFAMILY   =  1<<nerr
@@ -838,39 +851,35 @@ def buildJsonOther(par, file, jp):
     #
     # enforce certain fields for MC
     #
-    ok = True
     if file_type == "mc":
         if jp.has_key('mc.generator_type'):
             if jp['mc.generator_type'] not in par.validGenerator:
-                ok = False
+                file.state = file.state | file.WRONGMCREQUIREGEN
                 if par.verbose>4 :
-                    print "ERROR - "+jp['mc.generator_type']+\
+                    print "ERROR - mc.generator_type "\
+                        +jp['mc.generator_type']+\
                         " not in "+str(par.validGenerator)
         else:
-            ok = False
-            if par.verbose>4 :
-                print "ERROR - mc.generator_type is missing"
+           file.state = file.state | file.MISSINGMCREQUIREGEN
+           if par.verbose>4 :
+               print "ERROR - MC is missing mc.generator_type "
 
         if not jp.has_key('mc.simulation_stage'):
-            ok = False
+            file.state = file.state | file.MISSINGMCREQUIRESIM
             if par.verbose>4 :
                 print "ERROR - mc.simulation_stage is missing"
 
         if jp.has_key('mc.primary_particle'):
             if jp['mc.primary_particle'] not in par.validPrimary:
-                ok = False
+                file.state = file.state | file.WRONGMCREQUIREPRM
                 if par.verbose>4 :
-                    print "ERROR - "+jp['mc.primary_particle']+\
+                    print "ERROR - mc.primary_particle "+\
+                        jp['mc.primary_particle']+\
                         " not in "+str(par.validPrimary)
         else:
-            ok = False
-            if par.verbose>4 :
-                print "ERROR - mc.primary_particle is missing"
-            
-    if not ok :
-        file.state = file.state | file.MISSINGMCREQUIRE
-        if par.verbose>4 :
-            print "ERROR - MC is missing MC required fields"
+           file.state = file.state | file.MISSINGMCREQUIREPRM
+           if par.verbose>4 :
+               print "ERROR - mc.primary_particle is missing"
 
     #
     # the runs list come from RES exe but it doesn't 
