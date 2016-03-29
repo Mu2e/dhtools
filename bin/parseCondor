@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+# this is mu2e code in dhtools product
+import condorTools
+
+#print 'Number of arguments:', len(sys.argv), 'arguments.'
+#print 'Argument List:', str(sys.argv)
+
+def help():
+    print """
+
+    parseCondor [OPTIONS] CONDOR_LOG_FILE
+
+    Given a condor log file as a parameter, read and analyze it,
+    printing requested summaries.
+
+    -h, --help 
+           print help
+    -b, --basic
+           print all non-trivial condor messages
+    -s, --summary
+           print only a brief summary of counts of condor messages
+    -j INT, --job=INT
+           print only the messages for process INT
+    -t, --time 
+           print a timeline summmary
+    -f, --failed
+           list jobs with failed terminate code
+    -n, --nodes
+           list nodes with failed jobs
+    
+    """
+    sys.exit(0)
+
+# options is a list of (str,str) tuples, remainder is a list of str
+options, remainder = getopt.getopt(sys.argv[1:], 'hbsj:tfn', 
+        ['help', 'basic','summary','job=','time','failed','nodes'])
+
+#print options
+#print remainder
+
+if len(options) > 0 and ("-h" in options[0] or "--help" in options[0]):
+    help()
+    sys.exit(0)
+
+if len(remainder) != 1 :
+   print "\nERROR - input should be one condor log filespec\n"
+   help()
+   sys.exit(1)
+
+log = condorTools.condorLog(remainder[0])
+parser = condorTools.condorParser()
+print "parsing..."
+parser.setLog(log)
+
+if len(options) <= 0:
+   parser.printSummary()
+   sys.exit(0)
+
+for opt in options:
+    if opt[0] == "-b" or opt[0] == "--basic":
+       parser.printBasic()
+    if opt[0] == "-s" or opt[0] == "--summary":
+       parser.printSummary()
+    if opt[0] == "-t" or opt[0] == "--time":
+       parser.printTime()
+    if opt[0] == "-j" or opt[0] == "--job":
+       parser.printJob( int(opt[1]) )
+    if opt[0] == "-f" or opt[0] == "--failed":
+       parser.printFailed()
+    if opt[0] == "-n" or opt[0] == "--nodes":
+       parser.printNodes()
+
+sys.exit(0)
+
