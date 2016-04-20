@@ -31,6 +31,34 @@ class condorCode:
         self.code["024"] = "Job reconnection failed"
         self.code["028"] = "Job ad information event triggered."
 
+        self.mess = {}
+        self.mess["000"] = "Submitted"
+        self.mess["001"] = "Executing"
+        self.mess["002"] = "exe error"
+        self.mess["003"] = "checkpoint"
+        self.mess["004"] = "Evicted"
+        self.mess["005"] = "Terminated"
+        self.mess["006"] = "Updated"
+        self.mess["007"] = "Shadow err"
+        self.mess["008"] = "generic"
+        self.mess["009"] = "user abort"
+        self.mess["010"] = "suspended"
+        self.mess["011"] = "unsuspended"
+        self.mess["012"] = "held"
+        self.mess["013"] = "released"
+        self.mess["014"] = "Node execute"
+        self.mess["015"] = "Node terminated"
+        self.mess["016"] = "PS terminated"
+        self.mess["017"] = "Glob submit"
+        self.mess["018"] = "Glob failed"
+        self.mess["019"] = "Glob res up"
+        self.mess["020"] = "Glob res down"
+        self.mess["021"] = "Remote error"
+        self.mess["022"] = "disconnected"
+        self.mess["023"] = "reconnected"
+        self.mess["024"] = "reconnect failed"
+        self.mess["028"] = "Job info"
+
 
 class condorLog:
     """A utility class containing all lines of one condor log file"""
@@ -72,11 +100,21 @@ class condorMsg:
         self.site = "unknown";  # the site, if it was in message
         self.node = "unknown";  # the node, if it was in message
         self.code = "";   # return code
+        self.rtim = "";   # run time
+        self.memr = 0;   # run time
+        self.disk = 0;   # run time
+
+
 
     def __str__(self):
         line = ""
-        line += "{0:s} {1:s} {2:s} {3:s} {4:s} {5:s} {6:s}".format(self.mess,
+        m = condorCode().mess[self.mess]
+        #line += "{0:16s} {1:s} {2:s} {3:s} {4:s} {5:s} {6:s}".format(self.mess,
+        line += "{0:16s} {1:s} {2:s} {3:s} {4:s} {5:s} {6:3s}".format(m,
                  self.proc,self.date,self.hour,self.time,self.site,self.code)
+        if self.mess == "005" :
+            line += " {0:5s} {1:5d} {2:5d}".format(
+                self.timr,self.disk,self.memr)
         # looks like:
         #005 054 03/22 14 14:30:04 Clemson 65
         return line
@@ -102,6 +140,18 @@ class condorMsg:
     def setNode(self, c):
         """Set the node name of the message"""
         self.node = c
+
+    def setTimr(self, c):
+        """Set the CPU time"""
+        self.timr = c
+
+    def setMemr(self, c):
+        """Set the memory usage (MB)"""
+        self.memr = c
+
+    def setDisk(self, c):
+        """Set the disk usage (GB)"""
+        self.disk = c
 
 class condorParser:
     """A class which takes a condorLog and prints messages or summaries"""
@@ -162,7 +212,7 @@ class condorParser:
         n = 0
         mm = condorMsg()
         for t in self.log.ll:
-            qm = ('(' in t and '/' in t and ':' in t)
+            qm = ('(' in t[:40] and '/' in t[:40] and ':' in t[:40])
             # if this the start of a message block
             if qm :
                 # done with previous message, save it
@@ -183,6 +233,18 @@ class condorParser:
                 if "return value" in t:
                     t2 = t.replace(")"," ").split()[5]
                     mm.setCode(t2)
+                if "Abnormal termination" in t:
+                    t2 = t.replace(")"," ").split()[4]
+                    mm.setCode(t2)
+                if "Run Remote Usage" in t:
+                    t2 = t.replace(","," ").split()[2]
+                    mm.setTimr(t2[0:5])
+                if "Memory (MB)          :" in t:
+                    t2 = t.split()[3]
+                    mm.setMemr(int(t2))
+                if "Disk (KB)            :" in t:
+                    t2 = t.split()[3]
+                    mm.setDisk(int(t2)/1000)
                 if "JOB_Site" in t:
                     t2 = t.replace('"',' ').split()[2]
                     # don't record unknown sites
