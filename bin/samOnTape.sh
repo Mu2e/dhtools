@@ -11,7 +11,10 @@ echo "
    samOnTape DATASET
       -h print help
   
-     Summarize how many files have a location on tape.
+     Summarize how many files of the dataset have a 
+     location on tape.  Generally, once a file has a tape location 
+     it is backed up and safe to delete the orginal.
+
      DATASET is the name of a dataset to examine
 "
 }
