@@ -13,7 +13,9 @@ echo "
      When the script completes, the files will be in the tape queue,
      not necessary in dCache yet. The script will run at about 1s/file.
      You need to setup mu2e, kinit and getcert to run this procedure
-     Only for interactive use, not intended for grid jobs.
+     Only to be run interactively, to prepare for large-scale data access.
+     Running this command in a grid script will overload resources.
+
 "
 }
 
