@@ -17,7 +17,8 @@ echo "
      DATASET is the name of a dataset to retrieve. Since you probably don't 
      want all the files of a dataset, please limit the number with -n
      You need to "setup mu2e", kinit and getcert to run this procedure
-     Only for interactive use, not intended for grid jobs.
+     Only for interactive use - do nor run in grid jobs or SAM resources
+     will be overloaded.
 "
 }
 
