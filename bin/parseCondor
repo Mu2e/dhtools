@@ -52,7 +52,7 @@ if len(remainder) != 1 :
 
 log = condorTools.condorLog(remainder[0])
 parser = condorTools.condorParser()
-print "parsing..."
+#print "parsing..."
 parser.setLog(log)
 
 if len(options) <= 0:
