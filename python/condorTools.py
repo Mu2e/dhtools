@@ -1,4 +1,17 @@
 
+
+import math
+import time
+import sys
+
+
+##################################
+#
+# classes for parseCondor
+#
+#################################
+
+
 class condorCode:
     """A utility class containing all the condor message codes"""
 
@@ -32,32 +45,62 @@ class condorCode:
         self.code["028"] = "Job ad information event triggered."
 
         self.mess = {}
-        self.mess["000"] = "Submitted"
-        self.mess["001"] = "Executing"
-        self.mess["002"] = "exe error"
+        self.mess["000"] = "submitted"
+        self.mess["001"] = "executing"
+        self.mess["002"] = "exeError"
         self.mess["003"] = "checkpoint"
-        self.mess["004"] = "Evicted"
-        self.mess["005"] = "Terminated"
+        self.mess["004"] = "evicted"
+        self.mess["005"] = "terminated"
         self.mess["006"] = "Updated"
-        self.mess["007"] = "Shadow err"
+        self.mess["007"] = "ShadowErr"
         self.mess["008"] = "generic"
-        self.mess["009"] = "user abort"
+        self.mess["009"] = "userAbort"
         self.mess["010"] = "suspended"
         self.mess["011"] = "unsuspended"
         self.mess["012"] = "held"
         self.mess["013"] = "released"
-        self.mess["014"] = "Node execute"
-        self.mess["015"] = "Node terminated"
-        self.mess["016"] = "PS terminated"
-        self.mess["017"] = "Glob submit"
-        self.mess["018"] = "Glob failed"
-        self.mess["019"] = "Glob res up"
-        self.mess["020"] = "Glob res down"
-        self.mess["021"] = "Remote error"
+        self.mess["014"] = "nodeExecute"
+        self.mess["015"] = "nodeTerminated"
+        self.mess["016"] = "PSterminated"
+        self.mess["017"] = "globSubmit"
+        self.mess["018"] = "globFailed"
+        self.mess["019"] = "globResUp"
+        self.mess["020"] = "globResDown"
+        self.mess["021"] = "remoteError"
         self.mess["022"] = "disconnected"
         self.mess["023"] = "reconnected"
-        self.mess["024"] = "reconnect failed"
-        self.mess["028"] = "Job info"
+        self.mess["024"] = "reconnectFailed"
+        self.mess["028"] = "jobInfo"
+
+        # if this messgae is the last encountered, what state is the job in?
+        # noop means the state did not change
+        self.state = {}
+        self.state["000"] = "idle"
+        self.state["001"] = "executing"
+        self.state["002"] = "failed"
+        self.state["003"] = "noop"
+        self.state["004"] = "idle"
+        self.state["005"] = "terminated"
+        self.state["006"] = "noop"
+        self.state["007"] = "idle"
+        self.state["008"] = "noop"
+        self.state["009"] = "failed"
+        self.state["010"] = "suspended"
+        self.state["011"] = "executing"
+        self.state["012"] = "held"
+        self.state["013"] = "idle"
+        self.state["014"] = "noop"
+        self.state["015"] = "idle"
+        self.state["016"] = "noop"
+        self.state["017"] = "noop"
+        self.state["018"] = "noop"
+        self.state["019"] = "noop"
+        self.state["020"] = "noop"
+        self.state["021"] = "idle"
+        self.state["022"] = "executing"
+        self.state["023"] = "executing"
+        self.state["024"] = "idle"
+        self.state["028"] = "noop"
 
 
 class condorLog:
@@ -94,7 +137,7 @@ class condorMsg:
         self.line = "";  # the line
         self.mess = "";  # the message type 001, etc
         self.proc = "";  # the process it refers to
-        self.date = "";  # dd/mm/yy
+        self.date = "";  # dd/mm
         self.hour = "";  # hh
         self.time = "";  # hh:mm
         self.site = "unknown";  # the site, if it was in message
@@ -103,6 +146,7 @@ class condorMsg:
         self.rtim = "";   # run time
         self.memr = 0;   # run time
         self.disk = 0;   # run time
+        self.hago = 999;   # hours since this message (for report)
 
 
 
@@ -110,8 +154,9 @@ class condorMsg:
         line = ""
         m = condorCode().mess[self.mess]
         #line += "{0:16s} {1:s} {2:s} {3:s} {4:s} {5:s} {6:s}".format(self.mess,
-        line += "{0:16s} {1:s} {2:s} {3:s} {4:s} {5:s} {6:3s}".format(m,
-                 self.proc,self.date,self.hour,self.time,self.site,self.code)
+        line += "{0:3s} {1:16s} {2:5s} {3:5s} {4:2s} {5:s} {6:s} {7:3s}".format(
+                 self.mess,m,self.proc,
+                 self.date,self.hour,self.time,self.site,self.code)
         if self.mess == "005" :
             line += " {0:5s} {1:5d} {2:5d}".format(
                 self.timr,self.disk,self.memr)
@@ -133,13 +178,13 @@ class condorMsg:
         """Set the site name of the message"""
         self.site = s
 
-    def setCode(self, c):
-        """Set the return code of the message"""
-        self.code = c
-
     def setNode(self, c):
         """Set the node name of the message"""
         self.node = c
+
+    def setCode(self, c):
+        """Set the return code of the message"""
+        self.code = c
 
     def setTimr(self, c):
         """Set the CPU time"""
@@ -152,6 +197,7 @@ class condorMsg:
     def setDisk(self, c):
         """Set the disk usage (GB)"""
         self.disk = c
+
 
 class condorParser:
     """A class which takes a condorLog and prints messages or summaries"""
@@ -267,12 +313,49 @@ class condorParser:
                 site = self.messages[i].site
                 node = self.messages[i].node
                 proc = self.messages[i].proc
+                # now count backwards and fill sites
                 for j in xrange(i-1,-1,-1):
                     if self.messages[j].mess != "000" and \
                                  self.messages[j].proc == proc:
                         self.messages[j].site = site
                         self.messages[j].node = node
                         break
+
+        # for every 012 message (held)
+        # try to assign a site because following 028 has no site
+        for i in xrange(0,len(self.messages),1):
+            if self.messages[i].mess == "012":
+                # now count backwards and try to find a site
+                for j in xrange(i-1,-1,-1):
+                    if self.messages[j].proc == self.messages[i].proc:
+                        # if previous event was release, then no site
+                        if self.messages[j].mess == "013":
+                            break;
+                        # if previous message was submitted, the no site
+                        if self.messages[j].mess == "000":
+                            break;
+                        # if previous message had a site, use it
+                        if self.messages[j].site != "":
+                            self.messages[i].site = self.messages[j].site
+                            self.messages[i].node = self.messages[j].node
+                            break;
+                if self.messages[i].site == "":
+                    self.messages[i].site = "unknown"
+
+        # for every 007 message (shadow exception)
+        # try to assign a site because there is no following 028
+        for i in xrange(0,len(self.messages),1):
+            if self.messages[i].mess == "007":
+                # now count backwards and try to find a site
+                for j in xrange(i-1,-1,-1):
+                    if self.messages[j].proc == self.messages[i].proc:
+                        # if previous message had a site, use it
+                        if self.messages[j].site != "":
+                            self.messages[i].site = self.messages[j].site
+                            self.messages[i].node = self.messages[j].node
+                            break;
+                if self.messages[i].site == "":
+                    self.messages[i].site = "unknown"
 
         #print "mesages {0:d} {1:d}".format(n,len(self.messages))
 
@@ -488,3 +571,341 @@ class condorParser:
                 print "{0:3d} {1:3d} {2:s}".format(*n)
 
         return
+
+
+
+##################################
+#
+# classes for conMonReport
+#
+#################################
+
+class timeUtil:
+    """Some time conversion utilties"""
+    def __init__(self):
+        # now as a struct
+        #self.nstr = time.localtime(1478050572.0) # 1478048400.0
+        self.nstr = time.localtime()
+        # now as epoch sec
+        self.nsec = time.mktime(self.nstr)
+        # top of the hour as epoch sec
+        self.hsec = self.nsec - self.nstr.tm_min*60 - self.nstr.tm_sec
+
+        # compute best guess year for each month
+        # since condor doesn't tell you
+        ny = int(self.nstr.tm_year)%100   # now year as 2-digit int
+        nm = int(self.nstr.tm_mon)    # now month as int
+        # store result as a conversion between 2-digit month string 
+        # and 2-digit year string
+        self.cyearc = []
+        for im in range(1,13):
+            # if month is late in year and now is early in year, guess last year
+            if im > 6 and nm < 6 :
+                self.cyearc.insert(im,"{0:02d}".format(ny-1))
+            else:
+                self.cyearc.insert(im,"{0:02d}".format(ny))
+
+    def hoursAgo(self, monthdate, timestr):
+        # convert mm/dd hh:mm:ss to rounded hours ago
+
+        # year as yy chars
+        yy = self.cyearc[int(monthdate[0:2])]
+        # time as a struct
+        tstr = time.strptime(yy+"/"+monthdate+" "+timestr,"%y/%m/%d %H:%M:%S")
+        # time as epoch sec
+        tsec = time.mktime(tstr)
+        hoursAgo = int(math.floor( (self.hsec-tsec)/3600.0 + 1.0))
+        return hoursAgo
+
+    def hoursAgoString(self, hoursAgo):
+        # convert int hours ago to "mm/dd hh"
+        t = self.nsec - 3600 * hoursAgo
+        # time as struct
+        tstr = time.localtime(t)
+        # print format
+        tstring = time.strftime("%m/%d %H", tstr)
+        return tstring
+
+
+class condorParsedLog:
+    """A utility class containing all lines of one condor 
+log file, after parsing"""
+
+    def __init__(self, inFileName=""):
+        self.inFile = inFileName;
+        self.ll = []
+        self.messages = []
+        if len(inFileName) >0 :
+            self.read(inFileName)
+        # this is a measure of the jobs in this site and 
+        # will determine the order it is printed
+        self.size = 0 
+
+    def __str__(self):
+        line = ""
+        line += "{0:d} lines in {1:s}".format(len(self.ll),self.inFile)
+        return line
+
+    def read(self, inFileName=""):
+        if len(inFileName) > 0:
+            self.inFile = inFileName;
+        try:
+            f = open(self.inFile, 'r')
+            self.ll = f.read().splitlines()
+            f.close()
+        except:
+            print "\nError - could not read log file {0:s}!\n".\
+                format(self.inFile)
+            raise
+        # convert input lines to condorMsg
+        for l in self.ll:
+            m = condorMsg()
+            s = l.split()
+            m.set(s[0],s[2],s[3],s[4],s[5])
+            if len(s) >=  7 : m.setSite(s[6])
+            if len(s) >=  8 : m.setCode(s[7])
+            if len(s) >=  9 : m.setTimr(s[8])
+            if len(s) >= 10 : m.setMemr(s[9])
+            if len(s) >= 11 : m.setDisk(s[10])
+            self.messages.append(m)
+
+
+
+class conMonLine:
+    """One line of conMon summary"""
+
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        # the date for the line
+        self.date = ""
+        self.hour = ""
+        # these are current states of jobs
+        self.run = 0
+        self.idle = 0
+        self.hold = 0
+        # these are counts of things that happened in this hour
+        self.start = 0
+        self.success = 0
+        self.failed = 0
+        self.disc = 0
+        self.error = 0
+        self.evict = 0
+        self.shadow = 0
+
+    def __str__(self):
+        line = ""
+        line += "{0:4s} {1:2s} {2:5d} {3:5d} {4:5d}   {5:4d} {6:4d} {7:4d} {8:4d} {9:4d} {10:4d} {11:4d}".format( \
+        self.date,self.hour, \
+        self.run,self.idle,self.hold, \
+        self.start,self.success,self.failed, \
+        self.disc,self.error,self.evict,self.shadow )
+
+        return line
+
+
+class conMonReport:
+    """A class which takes a set of parsed condor logs and makes an html summary """
+
+    def __init__(self):
+        self.clear()
+        self.timeu = timeUtil()
+
+    def clear(self):
+        self.outHtml = ""
+        self.timeLimit = 48
+        # list of condorParsedLog 
+        self.plogs = []
+        self.report = {}
+        self.report["all"] = []
+
+    def setHtml(self, html):
+        """setHtml(string)
+           set the file to write the output"""
+        self.outHtml = html
+
+    def setTimeLimit(self, limit):
+        """setTimeLimit(limit)
+           set the limit on how far back to summarize (hours)"""
+        self.timeLimit = limit
+
+    def addLog(self, log):
+        """addLog(string)
+           Using its filespec, add a parsed log file to the list"""
+        plog = condorParsedLog(log)
+        self.plogs.append(plog)
+
+    def run(self):
+        """Create and write the html summary"""
+        if len(self.plogs) <=0:
+            return
+
+        for plog in self.plogs:
+            self.sumLog(plog)
+
+
+    def sumLog(self, plog):
+        """add a processed log to the sums"""
+
+        # needed for translations
+        cc = condorCode()
+
+        for m in plog.messages:
+            # make sure we an entry for all sites
+            if m.site != "" :
+                if not m.site in self.report:
+                    self.report[m.site] = []
+            # fill hours ago field of messages
+            m.hago = self.timeu.hoursAgo(m.date,m.time)
+
+        # how many jobs are in this log
+        nj = 0
+        for m in plog.messages:
+            if int(m.proc) > nj : nj = int(m.proc)
+        # the processes numbers start with 0
+        nj = nj + 1
+
+        # create new conMonLine for reach hour and site
+        for site in self.report:
+            if len(self.report[site]) == 0 :
+               for h in xrange(0,self.timeLimit+1) :
+                   self.report[site].append(conMonLine())
+        
+        # create a state record for each job
+        states = ["notstarted"]*nj
+        stateSites = [""]*nj
+
+        # start in the first hour, 
+        # roll forward through log, update states and count events
+        for im in range(len(plog.messages)) :
+            cm = plog.messages[im]
+            hh = cm.hago
+            # if this is in interesting range
+            if hh<=self.timeLimit and hh>=0:
+                # if this is a specific countable event
+                if cm.mess == "001" :
+                    self.report["all"][hh].start = \
+                        self.report["all"][hh].start + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].start = \
+                            self.report[cm.site][hh].start + 1
+                # end success
+                if cm.mess == "005" and cm.code == "0":
+                    self.report["all"][hh].success = \
+                        self.report["all"][hh].success + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].success = \
+                            self.report[cm.site][hh].success + 1
+                # end failure or abort
+                if (cm.mess == "005" and cm.code != "0") or cm.mess == "009":
+                    self.report["all"][hh].failed = \
+                        self.report["all"][hh].failed + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].failed = \
+                            self.report[cm.site][hh].failed + 1
+                # disconnect
+                if cm.mess == "022":
+                    self.report["all"][hh].disc = \
+                        self.report["all"][hh].disc + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].disc = \
+                            self.report[cm.site][hh].disc + 1
+                # evict
+                if cm.mess == "004":
+                    self.report["all"][hh].evict = \
+                        self.report["all"][hh].evict + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].evict = \
+                            self.report[cm.site][hh].evict + 1
+                # shadow
+                if cm.mess == "007":
+                    self.report["all"][hh].shadow = \
+                        self.report["all"][hh].shadow + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].shadow = \
+                            self.report[cm.site][hh].shadow + 1
+                # errors, not sure of the state
+                if (cm.mess == "015" or cm.mess == "016" \
+                        or cm.mess == "018" or cm.mess == "021"):
+                    self.report["all"][hh].error = \
+                        self.report["all"][hh].error + 1
+                    if cm.site != "":
+                        self.report[cm.site][hh].error = \
+                            self.report[cm.site][hh].error + 1
+                    
+            # analyze states for each job
+            j = int(cm.proc)
+            if cc.state[cm.mess] !="noop" :
+                states[j] = cc.state[cm.mess]
+                stateSites[j] = cm.site
+
+            # if the next hour is  new hour or the end, then write states
+            if (hh>=0 and hh<=self.timeLimit) and \
+                (im>=len(plog.messages)-1 or \
+                    plog.messages[im+1].hago != hh) :
+                # if the log skips an hour, then we have to fill in 
+                # all the hours in the gap
+                # hlim is the end of the gap, =hh-1 if no gap
+                hhlim = hh - 1
+                if im<len(plog.messages)-1 :   # if not end of file
+                    hhlim = plog.messages[im+1].hago  # loop over missing
+                for j in range(nj):
+                    for hhi in range(hh,hhlim,-1):
+                        if states[j]=="executing":
+                            self.report["all"][hhi].run = \
+                                self.report["all"][hhi].run + 1
+                            if stateSites[j] != "":
+                                self.report[stateSites[j]][hhi].run = \
+                                    self.report[stateSites[j]][hhi].run + 1
+                        if states[j]=="idle":
+                            self.report["all"][hhi].idle = \
+                                self.report["all"][hhi].idle + 1
+                            if stateSites[j] != "":
+                                self.report[stateSites[j]][hhi].idle = \
+                                    self.report[stateSites[j]][hhi].idle + 1
+                        if states[j]=="held":
+                            self.report["all"][hhi].hold = \
+                                self.report["all"][hhi].hold + 1
+                            if stateSites[j] != "":
+                                self.report[stateSites[j]][hhi].hold = \
+                                    self.report[stateSites[j]][hhi].hold + 1
+                        
+
+    def write(self):
+        """write()
+           write the results to sysout or the html file"""
+
+        fn=sys.stdout
+        if self.outHtml != "":
+            fn = open(self.outHtml,"w")
+            fn.write("<pre>\n\n")
+
+        # determine a size for each site, to print them in order
+        sitesort = []
+        for site in self.report:
+            size = 0
+            for i in range(0,min(12,self.timeLimit)):
+                size = size + self.report[site][i].run
+            sitesort.append((size,site))
+
+        sitesort.sort(None,None,True)
+
+        for ntp in sitesort:
+            site = ntp[1]
+            headerStr = "\n"+site+":\n"+\
+            "           run  idle  hold   strt succ fail disc  err evct shdw\n"
+            fn.write(headerStr)
+            ha = 0
+            for line in self.report[site]:
+                temp = self.timeu.hoursAgoString(ha)
+                line.date = temp.split()[0]
+                line.hour = temp.split()[1]
+                if ha==0 : line.hour="-"
+                fn.write(str(line)+"\n")
+                ha = ha +1
+
+        if self.outHtml != "":
+            fn.write("</pre>")
+            fn.close()
+
