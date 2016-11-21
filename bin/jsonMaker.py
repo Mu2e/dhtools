@@ -136,7 +136,9 @@ class Parms:
         self.file_family = ""
         self.fts  = "/pnfs/mu2e/scratch/fts"
         self.ftsp = "/pnfs/mu2e/persistent/fts"
-        self.res_fcl = "$MU2E_BASE_RELEASE/Analyses/test/runEventSubRun.fcl"
+        # this fcl move to the Print library, remove after transition
+        self.res_fcl = "Print/fcl/printSam.fcl"
+        self.res_fcl2 = "Analyses/test/runEventSubRun.fcl"
         self.validDataTiers = ["raw","rec","ntd","ext","rex","xnt"]
         self.validMCTiers  = ["cnf","sim","mix","dig","mcs","nts"]
         self.validOthTiers = ["log","bck","etc"]
@@ -554,7 +556,7 @@ def checkRES(par):
     #cmd="/bin/bash -c "
     cmd = ""
     cmd = cmd + "[ -x `which mu2e` ] && "
-    cmd = cmd + "[ -e "+par.res_fcl+" ] "
+    cmd = cmd + "[ -e ${MU2E_BASE_RELEASE}/"+par.res_fcl+" ] "
     cmd = cmd + " && echo OK"
     check = subprocess.check_output(cmd,shell=True)
 
@@ -1120,7 +1122,11 @@ def parseCommandOptions(par,files):
                 par.genericJson['parents'] = par.genericJson['parents'] +lt
             else:
                 par.genericJson['parents'] = lt
-        
+
+    # check if this release has made the fcl location transition
+    if not os.path.isfile(os.environ["MU2E_BASE_RELEASE"]+"/"+par.res_fcl):
+        par.res_fcl = par.res_fcl2
+
     par.resExeOk = checkRES(par)
     par.ifdhOk = checkIfdh(par)
 
