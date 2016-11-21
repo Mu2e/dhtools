@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+# this is mu2e code in dhtools product
+import samTools
+
+def help():
+    print """
+
+   samToPnfs DATASET|FILE
+
+     List the full /pnfs filespec of all files in the dataset.
+     Useful for grid jobs which need a SAM datatset, but use a file 
+     list for input instead of SAM.
+     If the argument has 6 dot-fields, it must be a file name
+     and not a dataset. In this case, operate on the file name only.
+
+    """
+    sys.exit(0)
+
+options, remainder = getopt.getopt(sys.argv[1:], 'h', 
+        ['help'])
+
+if len(options) > 0 and ("-h" in options[0] or "--help" in options[0]):
+    help()
+    sys.exit(0)
+
+samTools.sam2pnfs(sys.argv[1:])
+
+
+sys.exit(0)
+
