@@ -887,6 +887,9 @@ class conMonReport:
             size = 0
             for i in range(0,min(12,self.timeLimit)):
                 size = size + self.report[site][i].run
+            # force "all" to be first
+            if site == "all" :
+                size = 999999
             sitesort.append((size,site))
 
         sitesort.sort(None,None,True)
