@@ -598,17 +598,18 @@ class timeUtil:
         # store result as a conversion between 2-digit month string 
         # and 2-digit year string
         self.cyearc = []
+        # force index to equal month number by filling index=0
+        self.cyearc.append("zero")
         for im in range(1,13):
             # if month is late in year and now is early in year, guess last year
             if im > 6 and nm < 6 :
-                self.cyearc.insert(im,"{0:02d}".format(ny-1))
+                self.cyearc.insert(im+1,"{0:02d}".format(ny-1))
             else:
-                self.cyearc.insert(im,"{0:02d}".format(ny))
+                self.cyearc.insert(im+1,"{0:02d}".format(ny))
 
     def hoursAgo(self, monthdate, timestr):
         # convert mm/dd hh:mm:ss to rounded hours ago
 
-        # year as yy chars
         yy = self.cyearc[int(monthdate[0:2])]
         # time as a struct
         tstr = time.strptime(yy+"/"+monthdate+" "+timestr,"%y/%m/%d %H:%M:%S")
