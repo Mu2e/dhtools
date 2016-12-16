@@ -187,23 +187,6 @@ class UploadFile:
     errMess.append("failed to extract run/evt/sub from data file")
     nerr = nerr + 1
 
-    MISSINGMCREQUIREGEN   =  1<<nerr
-    errMess.append("MC file missing required mc.generator_type field")
-    nerr = nerr + 1
-    MISSINGMCREQUIRESIM   =  1<<nerr
-    errMess.append("MC file missing required mc.simulation_stage field")
-    nerr = nerr + 1
-    MISSINGMCREQUIREPRM   =  1<<nerr
-    errMess.append("MC file missing required mc.primary_particle field")
-    nerr = nerr + 1
-
-    WRONGMCREQUIREGEN   =  1<<nerr
-    errMess.append("MC file mc.generator_type value is not valid")
-    nerr = nerr + 1
-    WRONGMCREQUIREPRM   =  1<<nerr
-    errMess.append("MC file mc.primary_particle value is not valid")
-    nerr = nerr + 1
-
     MISSINGFILEFAMILY   =  1<<nerr
     errMess.append("file family was not provided")
     nerr = nerr + 1
@@ -851,39 +834,6 @@ def buildJsonOther(par, file, jp):
         jp['dh.source_file'] = file.dataFileName
 
     #
-    # enforce certain fields for MC
-    #
-    if file_type == "mc":
-        if jp.has_key('mc.generator_type'):
-            if jp['mc.generator_type'] not in par.validGenerator:
-                file.state = file.state | file.WRONGMCREQUIREGEN
-                if par.verbose>4 :
-                    print "ERROR - mc.generator_type "\
-                        +jp['mc.generator_type']+\
-                        " not in "+str(par.validGenerator)
-        else:
-           file.state = file.state | file.MISSINGMCREQUIREGEN
-           if par.verbose>4 :
-               print "ERROR - MC is missing mc.generator_type "
-
-        if not jp.has_key('mc.simulation_stage'):
-            file.state = file.state | file.MISSINGMCREQUIRESIM
-            if par.verbose>4 :
-                print "ERROR - mc.simulation_stage is missing"
-
-        if jp.has_key('mc.primary_particle'):
-            if jp['mc.primary_particle'] not in par.validPrimary:
-                file.state = file.state | file.WRONGMCREQUIREPRM
-                if par.verbose>4 :
-                    print "ERROR - mc.primary_particle "+\
-                        jp['mc.primary_particle']+\
-                        " not in "+str(par.validPrimary)
-        else:
-           file.state = file.state | file.MISSINGMCREQUIREPRM
-           if par.verbose>4 :
-               print "ERROR - mc.primary_particle is missing"
-
-    #
     # the runs list come from RES exe but it doesn't 
     # know what the run type is
     #
@@ -895,12 +845,26 @@ def buildJsonOther(par, file, jp):
         if par.verbose>4 :
             print "ERROR - file_type is 'data', 'run_type' not defined"
         
-    # replace run_type in runs list
+    #
+    #  clean up runs entry
+    #
     if jp.has_key('runs') :
+        #
+        # if this is MC and the runs list is very long,
+        # then set the list to empty since it takes too long 
+        # to enter in SAM db.  Also prefer empty to partial data.
+        #
+        if jp['file_type'] == "mc":
+            if len(jp['runs']) > 100:
+                if par.verbose>4 :
+                    print "INFO - metadata runs list for MC is too long, zero it"
+                jp['runs'] = []
+
+        # replace run_type in runs list
         for r in jp['runs']:
             if r[2]=="unknown" :
                 r[2] = jp['file_type']
-
+           
 
 
 ##############################################################
