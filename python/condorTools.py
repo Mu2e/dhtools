@@ -669,7 +669,7 @@ log file, after parsing"""
             if len(s) >= 10 : m.setMemr(s[9])
             if len(s) >= 11 : m.setDisk(s[10])
             self.messages.append(m)
-
+        #print self
 
 
 class conMonLine:
@@ -845,12 +845,12 @@ class conMonReport:
             if (hh>=0 and hh<=self.timeLimit) and \
                 (im>=len(plog.messages)-1 or \
                     plog.messages[im+1].hago != hh) :
-                # if the log skips an hour, then we have to fill in 
-                # all the hours in the gap
-                # hlim is the end of the gap, =hh-1 if no gap
-                hhlim = hh - 1
                 if im<len(plog.messages)-1 :   # if not end of file
                     hhlim = plog.messages[im+1].hago  # loop over missing
+                else:
+                    # this is file end, copy the states forward 
+                    # all the way to now
+                    hhlim = -1
                 for j in range(nj):
                     for hhi in range(hh,hhlim,-1):
                         if states[j]=="executing":
