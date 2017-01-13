@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+import sys
+
+# this is the sam web commands
+from samweb_cli import *
+
+# this the mu2e command
+from mu2eSam import *
+
+# this code, copied from samweb_cli, hooks the mu2e commands 
+# into the main list of commands
+for o in locals().values():
+    try:
+        if issubclass(o, CmdBase) and hasattr(o, 'name') and o.name not in commands:
+            commands[o.name] = o
+            command_groups.setdefault(o.cmdgroup,[]).append(o.name)
+    except TypeError: pass
+
+# this runs the main function from samweb_cli to execute the command
+rc = main()
+
+sys.exit(rc)
+
