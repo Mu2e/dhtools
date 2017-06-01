@@ -3,7 +3,7 @@
 import math
 import time
 import sys
-
+from operator import itemgetter
 
 ##################################
 #
@@ -546,7 +546,7 @@ class condorParser:
     def printFailed(self):
         for m in self.messages:
             if m.mess == "005" and m.code != "0":
-                print m
+                print m," ",m.node
 
         return
 
@@ -563,12 +563,18 @@ class condorParser:
                         else: rec = (rec[0] + 1, rec[1], rec[2])
                         nodelist[i] = rec
                 if not found:
-                    if m.code == "0": rec = (1,0,m.node)
-                    else: rec = (0,1,m.node)
+                    if m.code == "0": rec = (0,1,m.node)
+                    else: rec = (1,0,m.node)
                     nodelist.append(rec)
+
+        # reverse sort on second item, successes
+        nodelist = sorted(nodelist, key=itemgetter(1))
+        # now sort on first item, failures
+        nodelist = sorted(nodelist, key=itemgetter(0), reverse=True)
         for n in nodelist:
-            if n[0]>0:
-                print "{0:3d} {1:3d} {2:s}".format(*n)
+            #if n[0]>0:
+            #    print "{0:3d} {1:3d} {2:s}".format(*n)
+            print "{0:3d} {1:3d} {2:s}".format(*n)
 
         return
 
