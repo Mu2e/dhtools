@@ -41,3 +41,8 @@ samOnTape() {
   $DHTOOLS_DIR/bin/samOnTape.sh "$@"
 }
 export -f samOnTape
+
+samSplit() {
+  $DHTOOLS_DIR/bin/samSplit.sh "$@"
+}
+export -f samSplit
