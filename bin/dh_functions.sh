@@ -37,6 +37,11 @@ samNoChildren() {
 }
 export -f samNoChildren
 
+samOnDisk() {
+  $DHTOOLS_DIR/bin/samOnDisk.sh "$@"
+}
+export -f samOnDisk
+
 samOnTape() {
   $DHTOOLS_DIR/bin/samOnTape.sh "$@"
 }
