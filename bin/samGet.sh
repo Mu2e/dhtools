@@ -93,14 +93,24 @@ then
   samweb list-files "dh.dataset=$DSOPT" >> $TMPF
 fi
 
+# check for empty list
+NL=`cat $TMPF | wc -l`
+if [ $NL -le 0 ]; then
+    echo "ERROR - file selection found no files"
+    exit 1
+fi
+
 # translate sam file names to urls for ifdh
 
 N=0
 while read FN
 do
-echo samweb for file
   FNF=`samweb get-file-access-url --location=enstore $FN`
-  echo $FNF " " $OUTDIR >> $TMP
+  if [ -z "$FNF" ]; then
+      echo "ERROR - SAM had no location for $FN"
+      exit 2
+  fi
+  echo $FNF " " $OUTDIR/$FN >> $TMP
   N=$(($N+1))
   if [ $N -ge $NOPT ]; then break; fi
 done < $TMPF
