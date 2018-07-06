@@ -19,7 +19,7 @@ echo "
      FILE is a comma-separated list of SAM file names to be deleted
      FILEOFNAMES is a text file containing the sam names of files
      DATASET is the name of a dataset to delete
-     You need to "setup mu2e", kinit, and getcert to run this procedure
+     You need to \"setup mu2e\", kinit, and kx509 to run this procedure
 "
 }
 
@@ -113,8 +113,7 @@ done
 if ! grid-proxy-info >& /dev/null ; then
   echo "ERROR - grid certificate not found.  Please:
   kinit
-  getcert
-  export X509_USER_CERT=/tmp/x509up_u\`id -u\`"
+  kx509"
   exit 2
 fi
 

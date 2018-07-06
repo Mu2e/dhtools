@@ -12,7 +12,7 @@ echo "
      Copy the files of a sam dataset or dataset definition from tape to dCache.
      When the script completes, the files will be in the tape queue,
      not necessary in dCache yet. The script will run at about 1s/file.
-     You need to setup mu2e, kinit and getcert to run this procedure
+     You need to setup mu2e, kinit and kx509 to run this procedure
      Only to be run interactively, to prepare for large-scale data access.
      Running this command in a grid script will overload resources.
 
@@ -57,8 +57,7 @@ fi
 if ! grid-proxy-info >& /dev/null ; then
   echo "ERROR - grid certificate not found.  Please:
   kinit
-  getcert
-  export X509_USER_CERT=/tmp/x509up_u\`id -u\`"
+  kx509"
   exit 2
 fi
 

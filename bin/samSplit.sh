@@ -30,8 +30,7 @@ NSPL=$3
 if ! grid-proxy-info >& /dev/null ; then
   echo "ERROR - grid certificate not found.  Please:
   kinit
-  getcert
-  export X509_USER_CERT=/tmp/x509up_u\`id -u\`"
+  kx509"
   exit 2
 fi
 

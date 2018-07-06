@@ -16,7 +16,7 @@ echo "
      FILEOFNAMES is a text file contains the sam names of files
      DATASET is the name of a dataset to retrieve. Since you probably don't 
      want all the files of a dataset, please limit the number with -n
-     You need to "setup mu2e", kinit and getcert to run this procedure
+     You need to \"setup mu2e\", kinit and kx509 to run this procedure
      Only for interactive use - do nor run in grid jobs or SAM resources
      will be overloaded.
 "
@@ -63,8 +63,7 @@ done
 if ! grid-proxy-info >& /dev/null ; then
   echo "ERROR - grid certificate not found.  Please:
   kinit
-  getcert
-  export X509_USER_CERT=/tmp/x509up_u\`id -u\`"
+  kx509"
   exit 2
 fi
 
