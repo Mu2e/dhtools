@@ -143,7 +143,7 @@ class Parms:
         self.validMCTiers  = ["cnf","sim","mix","dig","mcs","nts"]
         self.validOthTiers = ["log","bck","etc"]
         self.validExtensions = \
-            ["art","root","tar","tgz","tbz","txt","log","fcl","mid"]
+            ["art","root","tar","tgz","tbz","txt","log","fcl","mid","stn","enc"]
         self.validFF = ["phy-sim","phy-nts","phy-etc",
                         "usr-sim","usr-nts","usr-etc","tst-cos"]
         self.validGenerator = ["beam","stopped_particle","cosmic","mix",
