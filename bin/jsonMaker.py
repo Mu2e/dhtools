@@ -781,9 +781,11 @@ def buildJsonOther(par, file, jp):
         if par.verbose>4:
             print "ERROR - file family type \"phy-\" but owner not mu2e"
     # only expect art files in sim ff
-    # and occasionally a root file like mustops
+    # and occasionally a root file like mustops or encrypted files
     if par.file_family[4:7]=="sim" and \
-           (jp['file_format'] != "art" and jp['file_format'] != "root"):
+           (jp['file_format'] != "art" and \
+            jp['file_format'] != "root" and \
+            jp['file_format'] != "enc" ):
         file.state = file.state | file.WRONGFILEFAMILY
         if par.verbose>4:
             print "ERROR - file family type \"-sim\" but file type not art"
