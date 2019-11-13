@@ -126,8 +126,8 @@ class condorLog:
             self.ll = f.read().splitlines()
             f.close()
         except:
-            print "\nError - could not read log file {0:s}!\n".\
-                format(self.inFile)
+            print("\nError - could not read log file {0:s}!\n".\
+                format(self.inFile))
             raise
 
 class condorMsg:
@@ -235,7 +235,7 @@ class condorParser:
         self.full = q
 
     def __str__(self):
-        #print type(self.inFile)
+        #print(type(self.inFile))
         line = ""
         line += "{0:s}\n".format(self.log)
         self.printSummary()
@@ -271,7 +271,7 @@ class condorParser:
                 hh = ss[5].split(":")[0]
                 mm = condorMsg()
                 mm.set(ss[0],ss[2],ss[4],hh,ss[5])
-                #print "new mess",n,len(self.messages),t
+                #print("new mess",n,len(self.messages),t)
                 n += 1
             else:
                 # see if this message includes a return code
@@ -357,22 +357,22 @@ class condorParser:
                 if self.messages[i].site == "":
                     self.messages[i].site = "unknown"
 
-        #print "mesages {0:d} {1:d}".format(n,len(self.messages))
+        #print("mesages {0:d} {1:d}".format(n,len(self.messages)))
 
         return
 
     def printBasic(self, verbose=1):
         for m in self.messages:
             if m.mess not in ["006","028"]:
-                print m
+                print(m)
         return
 
     def printJob(self, job=-1):
         for m in self.messages:
             if int(m.proc) == job:
-                print m
+                print(m)
                 #if m.mess not in ["006","028"]:
-                #    print m
+                #    print(m)
         return
 
     def printSummary(self):
@@ -406,19 +406,19 @@ class condorParser:
                     rcCountsSite.append( (s,k,1) )
                 
                 
-        print "count, message:"
+        print("count, message:")
         for k in messCounts:
             note = ""
             if cc.has_key(k):
                 note = cc[k]
-            print "{0:6d} {1:s} {2:s}".format(messCounts[k],k,note)
-        print "count, return code:"
+            print("{0:6d} {1:s} {2:s}".format(messCounts[k],k,note))
+        print("count, return code:")
         for k in rcCounts:
-            print "{0:6d} {1:3s}".format(rcCounts[k],k)
-        print "count, return code, site:"
+            print("{0:6d} {1:3s}".format(rcCounts[k],k))
+        print("count, return code, site:")
         rcCountsSite.sort()
         for x in rcCountsSite:
-            print "{0:6d} {1:3s} {2:s}".format(x[2],x[1],x[0])
+            print("{0:6d} {1:3s} {2:s}".format(x[2],x[1],x[0]))
 
         return
 
@@ -432,7 +432,7 @@ class condorParser:
             dh = m.date+m.hour
             if not dh in times: 
                 times.append(dh)
-        print " date   hr    idle  run   strt  stop  fail  disc  evct"
+        print(" date   hr    idle  run   strt  stop  fail  disc  evct")
         rn = 0 # running count of running jobs
         jb = 0 # number of jobs
         ss = 0 # running count of final temrinations
@@ -471,8 +471,8 @@ class condorParser:
             rn = rn + st - sp
             # there are always odd cases that we don't understand, protect rn
             if rn > (jb-ss) : rn = (jb-ss)
-            print " {0:s}  {1:s} {2:5d} {3:5d} {4:5d} {5:5d} {6:5d} {7:5d} {8:5d}".\
-                format(hh[0:5],hh[5:7],jb-rn-ss,rn,st,sp,fl,ds,ev)
+            print(" {0:s}  {1:s} {2:5d} {3:5d} {4:5d} {5:5d} {6:5d} {7:5d} {8:5d}".\
+                format(hh[0:5],hh[5:7],jb-rn-ss,rn,st,sp,fl,ds,ev))
         return
 
 
@@ -488,7 +488,7 @@ class condorParser:
         dh = m.date+m.hour
         i = 0
         n = len(self.messages)
-        print " date   hr   idle   run   stop  fail  disc  evct"
+        print(" date   hr   idle   run   stop  fail  disc  evct")
         for m in self.messages:
             if m.mess in goodMess :
                 if m.mess == "005":
@@ -536,8 +536,8 @@ class condorParser:
                 ev = n04 # evicted
                 il = jb-(rn+ss) # idle
                
-                print " {0:s}  {1:s} {2:5d} {3:5d} {4:5d} {5:5d} {6:5d} {7:5d}".\
-                format(dh[0:5],dh[5:7],il,rn,ss,fl,ds,ev)
+                print(" {0:s}  {1:s} {2:5d} {3:5d} {4:5d} {5:5d} {6:5d} {7:5d}".\
+                format(dh[0:5],dh[5:7],il,rn,ss,fl,ds,ev))
             dh = dh2
             i += 1
 
@@ -546,12 +546,12 @@ class condorParser:
     def printFailed(self):
         for m in self.messages:
             if m.mess == "005" and m.code != "0":
-                print m," ",m.node
+                print(m," ",m.node)
 
         return
 
     def printNodes(self):
-        print "fail, succ, node for nodes with failures"
+        print("fail, succ, node for nodes with failures")
         nodelist = []
         for m in self.messages:
             if m.mess == "005":
@@ -573,8 +573,8 @@ class condorParser:
         nodelist = sorted(nodelist, key=itemgetter(0), reverse=True)
         for n in nodelist:
             #if n[0]>0:
-            #    print "{0:3d} {1:3d} {2:s}".format(*n)
-            print "{0:3d} {1:3d} {2:s}".format(*n)
+            #    print("{0:3d} {1:3d} {2:s}".format(*n))
+            print("{0:3d} {1:3d} {2:s}".format(*n))
 
         return
 
@@ -629,7 +629,7 @@ class timeUtil:
         t = self.nsec - 3600 * hoursAgo
         # time as struct
         tstr = time.localtime(t)
-        # print format
+        # print(format)
         tstring = time.strftime("%m/%d %H", tstr)
         return tstring
 
@@ -661,8 +661,8 @@ log file, after parsing"""
             self.ll = f.read().splitlines()
             f.close()
         except:
-            print "\nError - could not read log file {0:s}!\n".\
-                format(self.inFile)
+            print("\nError - could not read log file {0:s}!\n".\
+                format(self.inFile))
             raise
         # convert input lines to condorMsg
         for l in self.ll:
@@ -675,7 +675,7 @@ log file, after parsing"""
             if len(s) >= 10 : m.setMemr(s[9])
             if len(s) >= 11 : m.setDisk(s[10])
             self.messages.append(m)
-        #print self
+        #print(self)
 
 
 class conMonLine:

@@ -21,7 +21,7 @@ import tempfile
 ##############################################################
 
 def printHelp():
-    print """
+    print( """
 jsonMaker  [OPTIONS] ... [FILES] ...
 
   Create json files which hold metadata information about the file
@@ -110,7 +110,7 @@ must be setup.
   Requires python 2.7 or greater for subprocess.check_output and 
      2.6 or greater for json module.
   version 2.3
-    """
+    """)
 
 ##############################################################
 # class to hold the command line settings
@@ -242,7 +242,7 @@ def insertFile(par,files,fnr):
     # 2) makes the file specs in the log file portable
 
     if par.verbose >4 :
-        print 'Including '+fnr
+        print( 'Including '+fnr )
 
     cmd = "readlink -f "+fnr
     fn = ( subprocess.check_output(cmd,shell=True) ).strip()
@@ -262,18 +262,18 @@ def insertFile(par,files,fnr):
         base = base[0:n]
         ext = base.split(".")[-1]
         if par.pair == "none":
-            print "ERROR - json or jsox files on input, but no pairing specified"
+            print("ERROR - json or jsox files on input, but no pairing specified")
             printHelp
             sys.exit(2)
 
     if par.verbose > 8:
-        print "insertFile: fn="+fn+"\n"\
-              "     base = "+base+" ext="+ext+"  ext2="+ext2
+        print("insertFile: fn="+fn+"\n"\
+              "     base = "+base+" ext="+ext+"  ext2="+ext2)
 
     # check if it exists
     ex = os.path.exists(fn)
     if par.verbose > 8:
-        print fn+" exists = " + "%s"%(ex)
+        print(fn+" exists = " + "%s"%(ex))
                 
     for fnt in files:
 
@@ -282,7 +282,7 @@ def insertFile(par,files,fnr):
         #
         match = False
         if par.pair == "dir":
-            #print "comparing: "+dir+" and "+fnt.baseDir
+            #print("comparing: "+dir+" and "+fnt.baseDir)
             if dir == fnt.baseDir:
                 match = True
         elif par.pair == "file":
@@ -295,7 +295,7 @@ def insertFile(par,files,fnr):
 
         if match :
             if par.verbose > 8:
-                print "found match for "+fn+" in the global file list"
+                print("found match for "+fn+" in the global file list")
             # if the file was already found, this is a duplicate
             # otherwise add the filename to the record
             if ext2 == "json":
@@ -332,8 +332,8 @@ def insertFile(par,files,fnr):
         file.dataFile = True
 
     if par.verbose > 8:
-        print "adding "+fn+" to the global file list"
-        print file
+        print("adding "+fn+" to the global file list")
+        print(file)
 
     #
     # put the new file on the list
@@ -349,7 +349,7 @@ def insertFile(par,files,fnr):
 def buildJson(par,file):
 
     if par.verbose>0 :
-        print "Building json for "+file.dataFileName
+        print("Building json for "+file.dataFileName)
 
 
     # this will be the main dictionary for the JSON file
@@ -372,8 +372,8 @@ def buildJson(par,file):
         try:
             jt = json.load(fj)
         except:
-            print "Error reading json content in file "+inp
-            print sys.exc_info()[0]
+            print("Error reading json content in file "+inp)
+            print(sys.exc_info()[0])
             file.state = file.state | file.JSONREADERROR
             fj.close()
             return 1
@@ -381,8 +381,8 @@ def buildJson(par,file):
         jd.update(jt)
 
         if par.verbose> 8:
-            print "Reading JSON from "+inp
-            print json.dumps(jd,sort_keys=True, indent=4)
+            print("Reading JSON from "+inp)
+            print(json.dumps(jd,sort_keys=True, indent=4))
 
     #
     # go through the list of requirements and see
@@ -406,8 +406,8 @@ def buildJson(par,file):
 
     #
     if par.verbose > 8:
-        print "Final values of json file for "+file.dataFileName
-        print json.dumps(jd, indent=4)
+        print("Final values of json file for "+file.dataFileName)
+        print(json.dumps(jd, indent=4))
 
     # save it in the file object
     file.json = jd
@@ -432,19 +432,19 @@ def buildJsonName(par,file,jp):
     if dname.count(".") != 5 :
         file.state = file.state | file.BADFILENAME
         if par.verbose>4:
-            print "ERROR filename has wrong number of dot fields, ",\
-            dname.count(".")
+            print("ERROR filename has wrong number of dot fields, ",\
+            dname.count("."))
         # if not enough dot fields, can't continue to parse
         if dname.count(".") < 5 :
-            print "ERROR filename has too few fields, can't continue"
+            print("ERROR filename has too few fields, can't continue")
             sys.exit(2)
 
     if 'file_name' in jp:
         # file name in json was wrong, that shouldn"t happen
         if jp['file_name'] != dname:
             if par.verbose>4:
-                print "ERROR file name did not match json",\
-                jp['file_name'],"!=",dname
+                print("ERROR file name did not match json",\
+                jp['file_name'],"!=",dname)
             file.state = file.state | file.BADFILENAME
     else:
         # not a problem, just add it
@@ -453,14 +453,14 @@ def buildJsonName(par,file,jp):
     tier = dname.split(".")[0]
     if not tier in par.validDataTiers+par.validMCTiers+par.validOthTiers :
         if par.verbose>4:
-            print "ERROR data tier not in ",\
-                par.validDataTiers+par.validMCTiers+par.validOthTiers
+            print("ERROR data tier not in ",\
+                par.validDataTiers+par.validMCTiers+par.validOthTiers)
         file.state = file.state | file.BADFILENAME
     if 'data_tier' in jp:
         if jp['data_tier'] != tier:
             if par.verbose>4:
-                print "ERROR data tier did not match json",\
-                jp['data_tier'],"!=",tier
+                print("ERROR data tier did not match json",\
+                jp['data_tier'],"!=",tier)
             file.state = file.state | file.BADFILENAME
     else:
         jp['data_tier'] = tier
@@ -470,8 +470,8 @@ def buildJsonName(par,file,jp):
     if 'dh.owner' in jp:
         if jp['dh.owner'] != usern:
             if par.verbose>4:
-                print "ERROR owner did not match json",\
-                jp['dh.owner'],"!=",usern
+                print("ERROR owner did not match json",\
+                jp['dh.owner'],"!=",usern)
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.owner'] = usern
@@ -481,15 +481,15 @@ def buildJsonName(par,file,jp):
         len(dname.split(".")[3]) == 0 or \
         (len(dname.split(".")[4]) == 0 and par.reName == ""):
         if par.verbose>4:
-            print "ERROR description, configuration or sequencer is null",\
-                dname
+            print("ERROR description, configuration or sequencer is null",\
+                dname)
         file.state = file.state | file.BADFILENAME
 
     if 'dh.description' in jp:
         if jp['dh.description'] != dname.split(".")[2]:
             if par.verbose>4:
-                print "ERROR description did not match json",\
-                jp['dh.description'],"!=",dname.split(".")[2]
+                print("ERROR description did not match json",\
+                jp['dh.description'],"!=",dname.split(".")[2])
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.description'] = dname.split(".")[2]
@@ -497,8 +497,8 @@ def buildJsonName(par,file,jp):
     if 'dh.configuration' in jp:
         if jp['dh.configuration'] != dname.split(".")[3]:
             if par.verbose>4:
-                print "ERROR configuration did not match json",\
-                jp['dh.configuration'],"!=",dname.split(".")[3]
+                print("ERROR configuration did not match json",\
+                jp['dh.configuration'],"!=",dname.split(".")[3])
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.configuration'] = dname.split(".")[3]
@@ -506,8 +506,8 @@ def buildJsonName(par,file,jp):
     if 'dh.sequencer' in jp:
         if jp['dh.sequencer'] != dname.split(".")[4]:
             if par.verbose>4:
-                print "ERROR sequencer did not match json",\
-                jp['dh.sequencer'],"!=",dname.split(".")[4]
+                print("ERROR sequencer did not match json",\
+                jp['dh.sequencer'],"!=",dname.split(".")[4])
             file.state = file.state | file.BADFILENAME
     else:
         jp['dh.sequencer'] = dname.split(".")[4]
@@ -516,14 +516,14 @@ def buildJsonName(par,file,jp):
     if not ext in par.validExtensions :
         # only fixed type of extensions allowed
         if par.verbose>4:
-            print "ERROR file extension",ext,"is not in ",\
-                par.validExtensions
+            print("ERROR file extension",ext,"is not in ",\
+                par.validExtensions)
         file.state = file.state | file.BADFILENAME
     if 'file_format' in jp:
         if jp['file_format'] != ext:
             if par.verbose>4:
-                print "ERROR extension did not match json",\
-                jp['file_format'],"!=",ext
+                print("ERROR extension did not match json",\
+                jp['file_format'],"!=",ext)
             file.state = file.state | file.BADFILENAME
     else:
         jp['file_format'] = ext
@@ -544,11 +544,11 @@ def checkRES(par):
     check = subprocess.check_output(cmd,shell=True)
 
     if check.strip() != "OK":
-        print "ERROR could not find RunEventSubRun module"
+        print("ERROR could not find RunEventSubRun module")
         return False
     else:
         if par.verbose > 3 :
-            print "RunEventSubRun module check is OK"
+            print("RunEventSubRun module check is OK")
         return True
 
     
@@ -562,31 +562,31 @@ def checkIfdh(par):
     check = subprocess.check_output(cmd,shell=True)
 
     if check.strip() != "OK":
-        print "WARNING - could not find ifdh"
+        print("WARNING - could not find ifdh")
         return False
     else:
         if par.verbose > 3 :
-            print "ifdh check is OK"
+            print("ifdh check is OK")
 
     #cmd = 'if  grd-proxy-info > /dev/null 2>&1 ; then echo OK; fi'
     #check = subprocess.check_output(cmd,shell=True)
     #
     #if check.strip() != "OK":
-    #    print "WARNING - failed grid-proxy-info check"
+    #    print("WARNING - failed grid-proxy-info check")
     #    return False
     #else:
     #    if par.verbose > 3 :
-    #        print "ifdh check is OK"
+    #        print("ifdh check is OK")
     #
     #cmd = 'if "" ; then echo OK; fi'
     #check = subprocess.check_output(cmd,shell=True)
     #
     #if check.strip() != "OK":
-    #    print "WARNING - failed grid-proxy-info check"
+    #    print("WARNING - failed grid-proxy-info check")
     #    return False
     #else:
     #    if par.verbose > 3 :
-    #        print "ifdh check is OK"
+    #        print("ifdh check is OK")
 
     return True
 
@@ -625,25 +625,25 @@ def buildJsonRES(par, file, jp):
     cmd = cmd+ " 2>&1 "
 
     if par.verbose > 4 :
-        print "Running run/event grabber on "+file.dataFileName
+        print("Running run/event grabber on "+file.dataFileName)
 
     err = False
     res = ""
     try:
         res = subprocess.check_output(cmd,shell=True)
     except subprocess.CalledProcessError as cpe:
-        print "ERROR: RES call reports an executable return code ",\
-                                               cpe.returncode
+        print("ERROR: RES call reports an executable return code ",\
+                                               cpe.returncode)
         err = True
     except:
-        print "ERROR: RES call reports a subprocess method error "
-        print traceback.print_exc()
-        #print sys.exc_info()[2].print_exc()
+        print("ERROR: RES call reports a subprocess method error ")
+        print(traceback.print_exc())
+        #print(sys.exc_info()[2].print_exc())
         err = True
 
     if par.verbose > 9 or err:
-        print "output of RES call:"
-        print res
+        print("output of RES call:")
+        print(res)
 
     if err :
         file.state = file.state | file.RESFAILED
@@ -654,8 +654,8 @@ def buildJsonRES(par, file, jp):
     sp1 = res.find("end RunEventSubRun::endJob summary") - 1
     res = res[sp0:sp1]
     if par.verbose > 9 :
-        print "output from RES exe run:"
-        print res
+        print("output from RES exe run:")
+        print(res)
 
     # it should be a json format
     err = False
@@ -663,57 +663,23 @@ def buildJsonRES(par, file, jp):
         jp_res = json.loads(res)
     except:
         if par.verbose> 0:
-            print "ERROR: RES json did not load"
+            print("ERROR: RES json did not load")
         err = True
 
     if par.verbose > 8 or err:
-        print "json file from RES exe run:"
-        print json.dumps(jp_res,indent=4)
+        print("json file from RES exe run:")
+        print(json.dumps(jp_res,indent=4))
 
     if len(jp_res) < 8:
         if par.verbose> 0:
-            print "ERROR: RES exe did not produce correct "\
-                "number of json fields, ",len(jp_res)
+            print("ERROR: RES exe did not produce correct "\
+                "number of json fields, ",len(jp_res))
         file.state = file.state | file.RESFAILED
 
     # add in these fields to the main json
     jp.update(jp_res)
 
     return 0
-
-##############################################################
-# copy a file from dCache to a temp area so it can be read
-##############################################################
-
-#def relocateFileRES(par, fn, fnt):
-#
-#    scr = "/scratch/mu2e/users/RES"
-#    fnt = ""
-#    #
-#    # use ifdh in case it includes bluearc or dcache
-#    #
-#    if not os.path.exists(scr):
-#        if par.verbose > 0 :
-#            print "ERROR: could not find scratch space "+scr
-#
-#    fnt = scr+"/"+"jsonMaker_"+"{0:d}".format(os.getpid())
-#    cmd = "ifdh cp "+fn+" "+fnt
-#    if par.execute:
-#        if par.verbose>4:
-#            print "Executing: "+cmd
-#            try:
-#                subprocess.check_call(cmd,shell=True)
-#            except subprocess.CalledProcessError as cpe:
-#                if par.verbose>0:
-#                    print "ERROR executing "+cmd
-#                    print "Exiting now..."
-#                sys.exit(2)
-#        else:
-#            if par.verbose>4:
-#                print "Would execute: "+cmd
-#
-#
-#    return 0
 
 
 ##############################################################
@@ -765,21 +731,21 @@ def buildJsonOther(par, file, jp):
     if re.match('^[\w\.-]+$',jp['file_name']) == None:
         file.state = file.state | file.BADFILENAME
         if par.verbose > 4:
-            print "ERROR - file name has illegal characters"
+            print("ERROR - file name has illegal characters")
 
     #
     # check for file_family
     #
     if not par.file_family in par.validFF :
         if par.verbose > 4:
-            print "ERROR - file family",par.file_family,"not in",par.validFF
+            print("ERROR - file family",par.file_family,"not in",par.validFF)
         file.state = file.state | file.MISSINGFILEFAMILY
     # only mu2e should upload to phy-*
     if par.file_family[0:3]=="phy" and \
        jp['dh.owner'] != "mu2e":
         file.state = file.state | file.WRONGFILEFAMILY
         if par.verbose>4:
-            print "ERROR - file family type \"phy-\" but owner not mu2e"
+            print("ERROR - file family type \"phy-\" but owner not mu2e")
     # only expect art files in sim ff
     # and occasionally a root file like mustops or encrypted files
     if par.file_family[4:7]=="sim" and \
@@ -788,13 +754,13 @@ def buildJsonOther(par, file, jp):
             jp['file_format'] != "enc" ):
         file.state = file.state | file.WRONGFILEFAMILY
         if par.verbose>4:
-            print "ERROR - file family type \"-sim\" but file type not art"
+            print("ERROR - file family type \"-sim\" but file type not art")
     # only expect root files in nts ff
     if par.file_family[4:7]=="nts" and \
        jp['file_format'] != "root":
         file.state = file.state | file.WRONGFILEFAMILY
         if par.verbose>4:
-            print "ERROR - file family type \"-nts\" but file type not root"
+            print("ERROR - file family type \"-nts\" but file type not root")
 
     #
     # add file size
@@ -825,7 +791,7 @@ def buildJsonOther(par, file, jp):
     jp['file_type'] = file_type
 
     if par.verbose > 9 :
-        print "data_tier is "+data_tier+" and file_type is " + file_type
+        print("data_tier is "+data_tier+" and file_type is " + file_type)
 
 
     #
@@ -845,7 +811,7 @@ def buildJsonOther(par, file, jp):
     if jp['file_type'] not in ["mc","other"]  and jp['file_format'] != "mid":
         file.state = file.state | file.NORUNTYPE
         if par.verbose>4 :
-            print "ERROR - file_type is 'data', 'run_type' not defined"
+            print("ERROR - file_type is 'data', 'run_type' not defined")
         
     #
     #  clean up runs entry
@@ -859,7 +825,7 @@ def buildJsonOther(par, file, jp):
         if jp['file_type'] == "mc":
             if len(jp['runs']) > 100:
                 if par.verbose>4 :
-                    print "INFO - metadata runs list for MC is too long, zero it"
+                    print("INFO - metadata runs list for MC is too long, zero it")
                 jp['runs'] = []
 
         # replace run_type in runs list
@@ -883,11 +849,11 @@ def printSummary1(files):
         if fnt.jsonFile : nj = nj + 1
         if fnt.jsoxFile : nx = nx + 1
         if fnt.state != 0 : ne = ne + 1
-    print 'Parsed input, found:'
-    print '%4d data files'% nd
-    print '%4d json files'% nj
-    print '%4d jsox files'% nx
-    print '%4d files in error'% ne
+    print('Parsed input, found:')
+    print('%4d data files'% nd)
+    print('%4d json files'% nj)
+    print('%4d jsox files'% nx)
+    print('%4d files in error'% ne)
 
 
 ##############################################################
@@ -961,7 +927,7 @@ def parseCommandOptions(par,files):
                 par.genericJson[k] = int(v)
             else:
                 if v == "":
-                    print "ERROR - value in argument to -i is empty:"+arg
+                    print("ERROR - value in argument to -i is empty:"+arg)
                     sys.exit(2)
                 par.genericJson[k] = v
         elif opt == "-d":
@@ -982,26 +948,26 @@ def parseCommandOptions(par,files):
             lockFtsDir = True
 
     if par.verbose >4:
-        print  'Parsed command parameters:'
-        print  ' -v ',par.verbose,' (verbose)'
-        print  ' -x ',par.execute,' (execute upload)'
-        print  ' -X ',par.executeF,' (execute upload, ignore checks)'
-        print  ' -s ',par.inFile,' (file with list of input files)'
-        print  ' -c ',par.copy,' (copy output files to FTS)'
-        print  ' -m ',par.move,' (move output files to FTS)'
-        print  ' -g ',par.groupCp,' (run ifdh -f at the end)'
-        print  ' -e ',par.inPlace,' (rename data file in place)'
-        print  ' -p ',par.pair,' (pairing method)'
-        print  ' -j ',genericJsonFs,' (generic json file)'
-        print  ' -d ',par.jsonDir,' (destination for json files)'
-        print  ' -a ',par.parentTxt,' (txt fle of parent file sam files)'
-        print  ' -t ',par.seqTag,' (txt to prepend to sequencer field)'
-        print  ' -f ',par.file_family,' (file_family)'
-        print  ' -r ',par.reName,' (rename files)'
-        print  ' -l ',par.comDir,' (log of renamed files)'
+        print('Parsed command parameters:')
+        print(' -v ',par.verbose,' (verbose)')
+        print(' -x ',par.execute,' (execute upload)')
+        print(' -X ',par.executeF,' (execute upload, ignore checks)')
+        print(' -s ',par.inFile,' (file with list of input files)')
+        print(' -c ',par.copy,' (copy output files to FTS)')
+        print(' -m ',par.move,' (move output files to FTS)')
+        print(' -g ',par.groupCp,' (run ifdh -f at the end)')
+        print(' -e ',par.inPlace,' (rename data file in place)')
+        print(' -p ',par.pair,' (pairing method)')
+        print(' -j ',genericJsonFs,' (generic json file)')
+        print(' -d ',par.jsonDir,' (destination for json files)')
+        print(' -a ',par.parentTxt,' (txt fle of parent file sam files)')
+        print(' -t ',par.seqTag,' (txt to prepend to sequencer field)')
+        print(' -f ',par.file_family,' (file_family)')
+        print(' -r ',par.reName,' (rename files)')
+        print(' -l ',par.comDir,' (log of renamed files)')
 
     if par.file_family == "":
-        print "ERROR - file_family is required"
+        print("ERROR - file_family is required")
         sys.exit(2)
 
     # if this is a phy* file family then switch to where those are
@@ -1009,15 +975,15 @@ def parseCommandOptions(par,files):
         par.fts = par.ftsp
 
     if par.verbose >4:
-        print  'FTS directory set to',par.fts
+        print('FTS directory set to',par.fts)
 
     if par.pair not in ["file","dir","none"]:
-        print "ERROR - pairing method must be 'file' or 'dir'"
+        print("ERROR - pairing method must be 'file' or 'dir'")
         sys.exit(2)
 
     if par.groupCp and (par.jsonDir == "" or par.jsonDir.lower() == "fts") :
-        print "ERROR - when using -g to do a grouped ifdh, you must use -d "
-        print "to specify a directory to temporarily hold the json files"
+        print("ERROR - when using -g to do a grouped ifdh, you must use -d ")
+        print("to specify a directory to temporarily hold the json files")
         sys.exit(2)
 
     # after get opts, the only args left are
@@ -1031,16 +997,16 @@ def parseCommandOptions(par,files):
     if par.inFile != "":
         fin = open(par.inFile,'r')
         for fn in fin:
-            print "read "+fn
+            print("read "+fn)
             fn = fn.strip(" \t \n")
             insertFile(par,files,fn)
         fin.close()
 
 
     if par.verbose > 8:
-        print " j x stat    filename"
+        print(" j x stat    filename")
         for fnt in files:
-            print fnt
+            print(fnt)
 
     if par.verbose > 1:
         printSummary1(files)
@@ -1053,12 +1019,12 @@ def parseCommandOptions(par,files):
         try:
             jt = json.load(fj)
         except:
-            print "Error reading json content in file "+fj
-            print sys.exc_info()[0]
+            print("Error reading json content in file "+fj)
+            print(sys.exc_info()[0])
         fj.close()
         if par.verbose> 8:
-            print "Reading JSON from "+genericJsonFs
-            print json.dumps(jt,sort_keys=True, indent=4)
+            print("Reading JSON from "+genericJsonFs)
+            print(json.dumps(jt,sort_keys=True, indent=4))
 
         # save it for when file json is created
         for k in jt.keys():
@@ -1075,12 +1041,12 @@ def parseCommandOptions(par,files):
             lt = tt.split();
             fj.close()
         except:
-            print "Error reading content in file ",fj
-            print sys.exc_info()[0]
+            print("Error reading content in file ",fj)
+            print(sys.exc_info()[0])
 
         if par.verbose> 8:
-            print "Reading parents from "+par.parentTxt
-            print lt
+            print("Reading parents from "+par.parentTxt)
+            print(lt)
 
         # save it for when file json is created
         if len(lt) > 0:
@@ -1129,23 +1095,23 @@ def writeJson(par,files):
             if e : ne = ne + 1
 
     if par.verbose > 0:
-        print "\nFile error summary:"
-        print "{:5d} data files found, {} have errors".format(nf,ne)
-        print ""
+        print("\nFile error summary:")
+        print("{:5d} data files found, {} have errors".format(nf,ne))
+        print("")
 
         if ne > 0 : 
-            print "Listing of errors:"
+            print("Listing of errors:")
             for i in range(nerr):
                 if errl[i] >0:
-                    print "{:5d} {}".format(errl[i],UploadFile.errMess[i])
+                    print("{:5d} {}".format(errl[i],UploadFile.errMess[i]))
                     # now give at least one file name
                     for f in files:
                         if f.state & (1<<i) > 0:
-                            print "        for example: ",file.dataFileName
+                            print("        for example: ",file.dataFileName)
                             break
 
     if ne > 0 :
-        print "\nERROR - errors detected - exiting without writing json files"
+        print("\nERROR - errors detected - exiting without writing json files")
         sys.exit(1)
 
     #
@@ -1159,8 +1125,8 @@ def writeJson(par,files):
         try:
             lfs = open(lfn,"w")
         except:
-            print "ERROR: Error opening log file "+lfn
-            print sys.exc_info()[0]
+            print("ERROR: Error opening log file "+lfn)
+            print(sys.exc_info()[0])
             sys.exit(2)
            
 
@@ -1171,7 +1137,7 @@ def writeJson(par,files):
     if checkCmd == "OK" :
         localFts = True
     if par.verbose >5 :
-        print  'localFts is ',localFts
+        print('localFts is ',localFts)
 
     #
     # process each file
@@ -1204,17 +1170,17 @@ def writeJson(par,files):
 
             if par.execute:
                 if par.verbose>4:
-                    print "Executing: "+cmd
+                    print("Executing: "+cmd)
                 try:
                     subprocess.check_call(cmd,shell=True)
                 except subprocess.CalledProcessError as cpe:
                     if par.verbose>0:
-                        print "ERROR executing "+cmd
-                        print "Exiting now..."
+                        print("ERROR executing "+cmd)
+                        print("Exiting now...")
                     sys.exit(2)
             else:
                 if par.verbose>4:
-                    print "Would execute: "+cmd
+                    print("Would execute: "+cmd)
 
         #
         # just rename if requested
@@ -1229,17 +1195,17 @@ def writeJson(par,files):
 
             if par.execute:
                 if par.verbose>4:
-                    print "Executing: "+cmd
+                    print("Executing: "+cmd)
                 try:
                     subprocess.check_call(cmd,shell=True)
                 except subprocess.CalledProcessError as cpe:
                     if par.verbose>0:
-                        print "ERROR executing "+cmd
-                        print "Exiting now..."
+                        print("ERROR executing "+cmd)
+                        print("Exiting now...")
                     sys.exit(2)
             else:
                 if par.verbose>4:
-                    print "Would execute: "+cmd
+                    print("Would execute: "+cmd)
 
         #
         # write the move in the log if requested
@@ -1280,7 +1246,7 @@ def writeJson(par,files):
         if checkCmd == "OK" :
             localDir = True
         if par.verbose >5 :
-            print  'localDir is ',localDir
+            print('localDir is ',localDir)
 
         #
         # the actual copy
@@ -1300,18 +1266,18 @@ def writeJson(par,files):
         # to a holding area
         if par.execute:
             if par.verbose>4 :
-                print "Executing: "+cmd
+                print("Executing: "+cmd)
             try:
                 subprocess.check_call(cmd,shell=True)
                 subprocess.check_call(cmd2,shell=True)
             except subprocess.CalledProcessError as cpe:
                 if par.verbose>0:
-                    print "ERROR executing "+cmd
-                    print "Exiting now..."
+                    print("ERROR executing "+cmd)
+                    print("Exiting now...")
                 sys.exit(2)
         else:
             if par.verbose>4 :
-                print "Would execute: "+cmd
+                print("Would execute: "+cmd)
 
         #
         # write the move in the log if requested
@@ -1334,13 +1300,13 @@ def writeJson(par,files):
         res = ""
         cmd = "ifdh cp -f "+lfn
         if par.verbose>4: 
-            print "in group copy, com="+cmd
+            print("in group copy, com="+cmd)
         try:
             res = subprocess.check_output(cmd,shell=True)
         except:
-            print "ERROR: failed to execute:"
-            print cmd
-            print traceback.print_exc()
+            print("ERROR: failed to execute:")
+            print(cmd)
+            print(traceback.print_exc())
             err = True
 
 
@@ -1365,9 +1331,9 @@ if __name__ == "__main__":
     # check for res and ifdh
     if par.execute:
         if not par.resExeOk:
-            print "WARNING - mu2e exe not found - will fail to operate on art files!"
+            print("WARNING - mu2e exe not found - will fail to operate on art files!")
         if not par.ifdhOk:
-            print "WARNING - ifdh or grid proxy not found - data movement may fail"
+            print("WARNING - ifdh or grid proxy not found - data movement may fail")
 
     # for each file, read the json files
     # determine if all required metadata is available

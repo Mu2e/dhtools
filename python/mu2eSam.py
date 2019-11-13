@@ -28,11 +28,11 @@ def ShellCommand(cmd, verbose=1):
     except:
         if verbose>0 :
             print >> sys.stderr, "ERROR: ShellCommand subprocess call reports a method error "
-            print traceback.print_exc()
-        #print sys.exc_info()[2].print_exc()
+            print(traceback.print_exc())
+        #print(sys.exc_info()[2].print_exc())
         err = True
     if verbose>1:
-        print "ShellCommand result = ",res
+        print("ShellCommand result = ",res)
 
     return (err,rc,res)
 
@@ -84,7 +84,7 @@ def mu2eLocate(spec):
     testList.append(flist[0].file_name)
     testLocList = mu2eLocateList(testList)
     testLoc = testLocList[0]
-    #print testLoc
+    #print(testLoc)
     test = testLoc.split('/')[3]
     oldStyle = True
     if test in ['tape','disk','persistent','scratch']:
@@ -92,7 +92,7 @@ def mu2eLocate(spec):
 
     # now loop over file and print calculated file
     base = "/".join(testLoc.split('/')[0:-3])
-    #print base
+    #print(base)
 
     ret = []
     for line in flist:
@@ -167,7 +167,7 @@ def mu2eLocateList(list):
 #        summary_tape = self.samweb.listFilesSummary(dims)
 #        nt = summary["file_count"]
 #        no = summary_tape["file_count"]
-#        print "{0:6d} total  {1:6d} on tape   {2:6d} not on tape".format(nt,no,nt-no)
+#        print("{0:6d} total  {1:6d} on tape   {2:6d} not on tape".format(nt,no,nt-no))
 #        return 0
 
 
@@ -228,7 +228,7 @@ class onDisk(CmdBase):
             nt = nt + 1
             if "ONLINE" in stat: nd = nd +1
             frac = 100.0*nd/float(nt)
-            print "{0:4d}/{1:4d} are on disk, {2:4.1f}%".format(nd,nt,frac)
+            print("{0:4d}/{1:4d} are on disk, {2:4.1f}%".format(nd,nt,frac))
 
         return 0
 
@@ -270,7 +270,7 @@ class getFiles(CmdBase):
         # this returns sam names
         list = mu2eFiles(args[0],False,nlimit)
 
-        #print list
+        #print(list)
         #return 0
 
 
@@ -289,7 +289,7 @@ class getFiles(CmdBase):
         if ret[0] or ret[1]!=0:
             raise CmdError("failed to make a temp file")
             
-        #print ret[2]
+        #print(ret[2])
 
         # mktemp comes back with a teminal \n
         tempFileName = ret[2].replace("\n","")
@@ -298,7 +298,7 @@ class getFiles(CmdBase):
             tempFile.write(line)
         tempFile.close()
 
-        #print "cat ",tempFile.name
+        #print("cat ",tempFile.name)
         #return 1
 
         # execute a bulk ifdh transfer
@@ -311,8 +311,8 @@ class getFiles(CmdBase):
         cmd = cmd+ "ifdh cp -f "+tempFileName
 
         ret = ShellCommand(cmd, 1)
-        #print cmd
-        #print ret[2]
+        #print(cmd)
+        #print(ret[2])
 
         if ret[0] or ret[1]!=0 :
             raise CmdError("failed to run ifdh to move files")
@@ -357,7 +357,7 @@ class onTape(CmdBase):
         summary_tape = self.samweb.listFilesSummary(dims)
         nt = summary["file_count"]
         no = summary_tape["file_count"]
-        print "{0:6d} total  {1:6d} on tape   {2:6d} not on tape".format(nt,no,nt-no)
+        print("{0:6d} total  {1:6d} on tape   {2:6d} not on tape".format(nt,no,nt-no))
         return 0
 
 
@@ -394,7 +394,7 @@ class toPnfs(CmdBase):
             fpl = mu2eLocate(args[0])
         # print full paths
         for fn in fpl:
-            print fn
+            print(fn)
         return 0
 
 
@@ -419,8 +419,8 @@ class noChildren(CmdBase):
 
     def run(self, options, args):
 
-        #print options.samlist
-        #print len(args),args
+        #print(options.samlist)
+        #print(len(args),args)
         if (len(args)>2 or (len(args)>1 and options.samlist is not None)):
             raise CmdError("too many parent/child specifiers")
         if not (len(args)==2 or (len(args)==1 and options.samlist is not None)):
@@ -471,21 +471,21 @@ class noChildren(CmdBase):
         if options.summary:
             # just print summary and quit
             nc = np - nn
-            print "parent: {0:d}  child: {1:d}   parentNoChild: {2:d}".\
-                format(np,nc,nn)
+            print("parent: {0:d}  child: {1:d}   parentNoChild: {2:d}".\
+                format(np,nc,nn))
             return 0
 
         # now have the list of child files
         if not options.path :
             # just the file names
             for sn in nl:
-                print sn
+                print(sn)
             return 0
         # if here, then print full paths
         fl = mu2eLocate(nl)
         # print the path/file names
         for fn in fl:
-            print fn
+            print(fn)
         return 0
 
 
