@@ -4,6 +4,10 @@
 # and write out a json file summary suitable to passing to SAM
 # -h print help
 #
+
+# needed to run in py2 and py3
+from __future__ import  print_function
+
 import os
 import re
 import sys
@@ -13,7 +17,7 @@ import subprocess
 import traceback
 import time
 import hashlib
-from string import maketrans
+import string
 import tempfile
 
 ##############################################################
@@ -245,10 +249,10 @@ def insertFile(par,files,fnr):
         print( 'Including '+fnr )
 
     cmd = "readlink -f "+fnr
-    fn = ( subprocess.check_output(cmd,shell=True) ).strip()
+    fn = subprocess.check_output(cmd,shell=True).decode('utf-8').strip()
 
     # separate out basename and extension
-    base = os.path.basename(fn)
+    base = os.path.basename(fn) 
     dir  = os.path.dirname(fn)
     ext = base.split(".")[-1]
 
@@ -541,7 +545,7 @@ def checkRES(par):
     cmd = cmd + "[ -x `which mu2e` ] && "
     cmd = cmd + "[ -e ${MU2E_BASE_RELEASE}/"+par.res_fcl+" ] "
     cmd = cmd + " && echo OK"
-    check = subprocess.check_output(cmd,shell=True)
+    check = subprocess.check_output(cmd,shell=True).decode('utf-8')
 
     if check.strip() != "OK":
         print("ERROR could not find RunEventSubRun module")
@@ -559,7 +563,7 @@ def checkRES(par):
 def checkIfdh(par):
 
     cmd = 'if [ -n "`which ifdh 2> /dev/null`" ]; then echo OK; fi'
-    check = subprocess.check_output(cmd,shell=True)
+    check = subprocess.check_output(cmd,shell=True).decode('utf-8')
 
     if check.strip() != "OK":
         print("WARNING - could not find ifdh")
@@ -569,7 +573,7 @@ def checkIfdh(par):
             print("ifdh check is OK")
 
     #cmd = 'if  grd-proxy-info > /dev/null 2>&1 ; then echo OK; fi'
-    #check = subprocess.check_output(cmd,shell=True)
+    #check = subprocess.check_output(cmd,shell=True).decode('utf-8')
     #
     #if check.strip() != "OK":
     #    print("WARNING - failed grid-proxy-info check")
@@ -579,7 +583,7 @@ def checkIfdh(par):
     #        print("ifdh check is OK")
     #
     #cmd = 'if "" ; then echo OK; fi'
-    #check = subprocess.check_output(cmd,shell=True)
+    #check = subprocess.check_output(cmd,shell=True).decode('utf-8')
     #
     #if check.strip() != "OK":
     #    print("WARNING - failed grid-proxy-info check")
@@ -603,16 +607,16 @@ def buildJsonRES(par, file, jp):
     # then skip the process of adding it.
     #
     ok = True
-    if not jp.has_key("event_count")     : ok = False
-    if not jp.has_key("first_run_event") : ok = False
-    if not jp.has_key("first_event")     : ok = False
-    if not jp.has_key("last_run_event")  : ok = False
-    if not jp.has_key("last_event")      : ok = False
-    if not jp.has_key("first_run_subrun"): ok = False
-    if not jp.has_key("first_subrun")    : ok = False
-    if not jp.has_key("last_run_subrun") : ok = False
-    if not jp.has_key("last_subrun")     : ok = False
-    if not jp.has_key("runs")            : ok = False
+    if "event_count"      not in jp : ok = False
+    if "first_run_event"  not in jp : ok = False
+    if "first_event"      not in jp : ok = False
+    if "last_run_event"   not in jp : ok = False
+    if "last_event"       not in jp : ok = False
+    if "first_run_subrun" not in jp : ok = False
+    if "first_subrun"     not in jp : ok = False
+    if "last_run_subrun"  not in jp : ok = False
+    if "last_subrun"      not in jp : ok = False
+    if "runs"             not in jp : ok = False
 
     if ok : return 0
 
@@ -630,7 +634,7 @@ def buildJsonRES(par, file, jp):
     err = False
     res = ""
     try:
-        res = subprocess.check_output(cmd,shell=True)
+        res = subprocess.check_output(cmd,shell=True).decode('utf-8')
     except subprocess.CalledProcessError as cpe:
         print("ERROR: RES call reports an executable return code ",\
                                                cpe.returncode)
@@ -694,7 +698,7 @@ def buildJsonOther(par, file, jp):
     if par.reName != "" :
         # if art file, use first run_subrun
         if jp['file_format'] == "art":
-            if jp.has_key('dh.first_run_subrun') :
+            if 'dh.first_run_subrun' in jp :
                 jp['dh.sequencer'] = "{0:s}{1:08d}_{2:06d}".format(     \
                 par.seqTag,jp['dh.first_run_subrun'],jp['dh.first_subrun'])
             else:
@@ -736,7 +740,7 @@ def buildJsonOther(par, file, jp):
     #
     # check for file_family
     #
-    if not par.file_family in par.validFF :
+    if par.file_family not in par.validFF :
         if par.verbose > 4:
             print("ERROR - file family",par.file_family,"not in",par.validFF)
         file.state = file.state | file.MISSINGFILEFAMILY
@@ -798,7 +802,7 @@ def buildJsonOther(par, file, jp):
     # record the original data file in source_file
     # don't overwrite if it was already there from a json file
     #
-    if not jp.has_key('dh.source_file'):
+    if 'dh.source_file' not in jp:
         jp['dh.source_file'] = file.dataFileName
 
     #
@@ -816,7 +820,7 @@ def buildJsonOther(par, file, jp):
     #
     #  clean up runs entry
     #
-    if jp.has_key('runs') :
+    if 'runs' in jp :
         #
         # if this is MC and the runs list is very long,
         # then set the list to empty since it takes too long 
@@ -1029,7 +1033,7 @@ def parseCommandOptions(par,files):
         # save it for when file json is created
         for k in jt.keys():
             # do not supersede values given at command line
-            if not par.genericJson.has_key(k):
+            if k not in par.genericJson :
                 par.genericJson[k] = jt[k]
 
     if par.parentTxt != "":
@@ -1037,9 +1041,10 @@ def parseCommandOptions(par,files):
         try:
             fj = open(par.parentTxt,"r")
             tt = fj.read()
-            tt = tt.translate(maketrans(",;[]{}\n","       "))
-            lt = tt.split();
             fj.close()
+            tt = tt.replace(","," ")
+            tt = tt.replace("\n"," ")
+            lt = tt.split();
         except:
             print("Error reading content in file ",fj)
             print(sys.exc_info()[0])
@@ -1050,7 +1055,7 @@ def parseCommandOptions(par,files):
 
         # save it for when file json is created
         if len(lt) > 0:
-            if par.genericJson.has_key('parents'):
+            if 'parents' in par.genericJson:
                 par.genericJson['parents'] = par.genericJson['parents'] +lt
             else:
                 par.genericJson['parents'] = lt
@@ -1133,7 +1138,7 @@ def writeJson(par,files):
     # check if the fts is local (so OS-level commands can be used)
     localFts = False
     cmd = "if [ -d "+par.fts+" ]; then echo OK; fi"
-    checkCmd = ( subprocess.check_output(cmd,shell=True) ).strip()
+    checkCmd = subprocess.check_output(cmd,shell=True).decode('utf-8').strip()
     if checkCmd == "OK" :
         localFts = True
     if par.verbose >5 :
@@ -1218,7 +1223,7 @@ def writeJson(par,files):
         #
         fnj = "tempfile"
         if par.execute :
-            outfile = tempfile.NamedTemporaryFile(delete=False)
+            outfile = tempfile.NamedTemporaryFile(delete=False, mode="w")
             fnj = outfile.name
             json.dump(file.json,outfile,indent=4)
             outfile.write("\n")
@@ -1242,7 +1247,7 @@ def writeJson(par,files):
         # check if the output dir is local (so OS-level commands can be used)
         localDir = False
         cmd = "[ -d "+odir+" ] && echo OK"
-        checkCmd = ( subprocess.check_output(cmd,shell=True) ).strip()
+        checkCmd = subprocess.check_output(cmd,shell=True).decode('utf-8').strip()
         if checkCmd == "OK" :
             localDir = True
         if par.verbose >5 :
@@ -1302,7 +1307,7 @@ def writeJson(par,files):
         if par.verbose>4: 
             print("in group copy, com="+cmd)
         try:
-            res = subprocess.check_output(cmd,shell=True)
+            res = subprocess.check_output(cmd,shell=True).decode('utf-8')
         except:
             print("ERROR: failed to execute:")
             print(cmd)

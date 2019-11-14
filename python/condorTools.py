@@ -1,4 +1,6 @@
 
+# needed to run in py2 and py3
+from __future__ import  print_function
 
 import math
 import time
@@ -149,7 +151,6 @@ class condorMsg:
         self.hago = 999;   # hours since this message (for report)
 
 
-
     def __str__(self):
         line = ""
         m = condorCode().mess[self.mess]
@@ -290,7 +291,7 @@ class condorParser:
                     mm.setMemr(int(t2))
                 if "Disk (KB)            :" in t:
                     t2 = t.split()[3]
-                    mm.setDisk(int(t2)/1000)
+                    mm.setDisk(int(int(t2)/1000))
                 if "JOB_Site" in t:
                     t2 = t.replace('"',' ').split()[2]
                     # don't record unknown sites
@@ -308,13 +309,13 @@ class condorParser:
         # now for every 028 message (job add updated)
         # associate the site and node to the previous 
         # non-028 message for this process
-        for i in xrange(len(self.messages)-1,0,-1):
+        for i in range(len(self.messages)-1,0,-1):
             if self.messages[i].mess == "028":
                 site = self.messages[i].site
                 node = self.messages[i].node
                 proc = self.messages[i].proc
                 # now count backwards and fill sites
-                for j in xrange(i-1,-1,-1):
+                for j in range(i-1,-1,-1):
                     if self.messages[j].mess != "000" and \
                                  self.messages[j].proc == proc:
                         self.messages[j].site = site
@@ -323,10 +324,10 @@ class condorParser:
 
         # for every 012 message (held)
         # try to assign a site because following 028 has no site
-        for i in xrange(0,len(self.messages),1):
+        for i in range(0,len(self.messages),1):
             if self.messages[i].mess == "012":
                 # now count backwards and try to find a site
-                for j in xrange(i-1,-1,-1):
+                for j in range(i-1,-1,-1):
                     if self.messages[j].proc == self.messages[i].proc:
                         # if previous event was release, then no site
                         if self.messages[j].mess == "013":
@@ -344,10 +345,10 @@ class condorParser:
 
         # for every 007 message (shadow exception)
         # try to assign a site because there is no following 028
-        for i in xrange(0,len(self.messages),1):
+        for i in range(0,len(self.messages),1):
             if self.messages[i].mess == "007":
                 # now count backwards and try to find a site
-                for j in xrange(i-1,-1,-1):
+                for j in range(i-1,-1,-1):
                     if self.messages[j].proc == self.messages[i].proc:
                         # if previous message had a site, use it
                         if self.messages[j].site != "":
@@ -382,7 +383,7 @@ class condorParser:
         rcCountsSite = []   # count return codes by site
         for m in self.messages:
             k = m.mess
-            if messCounts.has_key(k):
+            if k in messCounts:
                 messCounts[k] += 1
             else:
                 messCounts[k] = 1
@@ -390,7 +391,7 @@ class condorParser:
             # if terminate code
             if m.mess == "005":
                 k = m.code
-                if rcCounts.has_key(k):
+                if k in rcCounts:
                     rcCounts[k] += 1
                 else:
                     rcCounts[k] = 1
@@ -409,7 +410,7 @@ class condorParser:
         print("count, message:")
         for k in messCounts:
             note = ""
-            if cc.has_key(k):
+            if k in cc:
                 note = cc[k]
             print("{0:6d} {1:s} {2:s}".format(messCounts[k],k,note))
         print("count, return code:")
@@ -776,7 +777,7 @@ class conMonReport:
         # create new conMonLine for reach hour and site
         for site in self.report:
             if len(self.report[site]) == 0 :
-               for h in xrange(0,self.timeLimit+1) :
+               for h in range(0,self.timeLimit+1) :
                    self.report[site].append(conMonLine())
         
         # create a state record for each job
