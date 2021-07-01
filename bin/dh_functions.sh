@@ -2,11 +2,6 @@
 # bash functions to provide easy reference to scripts
 #
 
-jsonMaker() {
-  $DHTOOLS_DIR/bin/jsonMaker.py "$@"
-}
-export -f jsonMaker
-
 samRm() {
   $DHTOOLS_DIR/bin/samRm.sh "$@"
 }
