@@ -26,7 +26,15 @@ import tempfile
 
 def printHelp():
     print( """
+
+************************************************************************
+*                             WARNING                                  *
+* jsonMaker is deprecated, please use printJson from mu2etools product *
+************************************************************************
+
+
 jsonMaker  [OPTIONS] ... [FILES] ...
+
 
   Create json files which hold metadata information about the file
 to be uploaded. The file list can contain data, and other types,
@@ -761,7 +769,8 @@ def buildJsonOther(par, file, jp):
             print("ERROR - file family type \"-sim\" but file type not art")
     # only expect root files in nts ff
     if par.file_family[4:7]=="nts" and \
-       jp['file_format'] != "root":
+       (jp['file_format'] != "root"  and \
+        jp['file_format'] != "stn" ):
         file.state = file.state | file.WRONGFILEFAMILY
         if par.verbose>4:
             print("ERROR - file family type \"-nts\" but file type not root")
@@ -1321,6 +1330,18 @@ def writeJson(par,files):
 # main
 ##############################################################
 if __name__ == "__main__":
+
+
+    print( """
+
+************************************************************************
+*                             WARNING                                  *
+* jsonMaker is deprecated, please use printJson from mu2etools product *
+************************************************************************
+
+    """)
+
+
 
     # a list of command line parameters
     par = Parms()
