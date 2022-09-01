@@ -1,10 +1,93 @@
 #!/bin/bash
+#
+# script to list the SAM file locations of a set of files
+# in a dataset, or similar file selection
+#
+
+usage() {
+
+    echo "
+
+     samListLocations [OPTIONS]  <SAMWEB-ARGS>
+
+     Script to take a dataset definition (or other format input
+     to samweb list-file-locations) and retrieve the locations
+     and rewrite the format to a dCache filespec.
+
+     <SAMWEB-ARGS>
+     The arguments to the samweb list-file-locations command
+
+     [OPTIONS]
+     -d only files on disk will be printed
+     -f files on disk will be printed first, followed by the rest
+     -h print this help
+
+     Using the disk options requires a valid x509 cert
+     and will cause the script to run slower ( ~200 files per min )
+
+     examples:
+
+     samListLocations --defname dts.mu2e.CePlusEndpoint.MDC2020t.art
+     samListLocations -d --dim \"dh.dataset=mcs.mu2e.DS-cosmic-mix-cat.MDC2018i.001002_00000001.art\"
+
+"
+}
+
+
+DODISK=""
+DOFIRST=""
+DOLOC=""
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+TMPF=""
+if [ "$1" == "-d" ]; then
+    shift
+    DODISK=yes
+    DOLOC=tes
+elif [ "$1" == "-f" ]; then
+    shift
+    DOFIRST=yes
+    DOLOC=yes
+    TMPF=$(mktemp)
+fi
+
+
+
 OLDIFS=${IFS}
 samweb list-file-locations "${@}" | while read line
 do
    IFS=$'\t'
    read -a strarr <<< "$line"
    FILEPATH=`echo ${strarr[0]} | cut -d':' -f2`
-   echo "${FILEPATH}/${strarr[1]}"
+   FILESPEC=${FILEPATH}/${strarr[1]}
+
+   LOC=""
+   if [ $DOLOC ]; then
+       LOC=$( dcacheFileInfo -l $FILESPEC )
+   fi
+
+   if [ $DODISK ]; then
+       [ "$LOC" == "ONLINE_AND_NEARLINE" ] && echo "$FILESPEC"
+   elif [ $DOFIRST ]; then
+       if [ "$LOC" == "ONLINE_AND_NEARLINE" ]; then
+           echo "$FILESPEC"
+       else
+           echo "$FILESPEC" >> $TMPF
+       fi
+   else
+       echo "$FILESPEC"
+   fi
+
 done
 IFS=${OLDIFS}
+
+if [ $DOFIRST ]; then
+    cat $TMPF
+    rm -f $TMPF
+fi
+
+exit 0
