@@ -36,13 +36,6 @@ mcs.mu2e.DS-cosmic-mix-cat.MDC2018i.001002_00000001.art
 ### main
 ################################
 
-FINV=/tmp/x509up_u$UID
-[ -n "$X509_USER_PROXY" ] && FINV="$X509_USER_PROXY"
-
-if [ ! -e $FINV ]; then
-    echo "ERROR - could not find x509 proxy"
-    exit 1
-fi
 
 DOCRC=""
 DOLOC=""
@@ -85,6 +78,14 @@ FFS="$@"
 
 if [ -z "$FFS"  ]; then
     echo "ERROR - one pnfs filespec argument is required"
+    exit 1
+fi
+
+FINV=/tmp/x509up_u$UID
+[ -n "$X509_USER_PROXY" ] && FINV="$X509_USER_PROXY"
+
+if [ ! -e $FINV ]; then
+    echo "ERROR - could not find x509 proxy"
     exit 1
 fi
 
