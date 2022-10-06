@@ -71,9 +71,9 @@ do
    fi
 
    if [ $DODISK ]; then
-       [ "$LOC" == "ONLINE_AND_NEARLINE" ] && echo "$FILESPEC"
+       [[ "$LOC" =~ "ONLINE" ]] && echo "$FILESPEC"
    elif [ $DOFIRST ]; then
-       if [ "$LOC" == "ONLINE_AND_NEARLINE" ]; then
+       if [[ "$LOC" =~ "ONLINE" ]]; then
            echo "$FILESPEC"
        else
            echo "$FILESPEC" >> $TMPF
