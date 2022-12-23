@@ -55,19 +55,38 @@ elif [ "$1" == "-f" ]; then
     TMPF=$(mktemp)
 fi
 
+[ -z "$MU2E" ] && setup mu2e
+[ -z "$SETUP_SAM_WEB_CLIENT" ] && setup sam_web_client
+[ -z "$SETUP_DHTOOLS" ] && setup dhtools
+if ! voms-proxy-info > /dev/null 2>&1 ; then
+    vomsCert > /dev/null 2>&1
+fi
 
+TMPL=$(mktemp)
 
-OLDIFS=${IFS}
-samweb list-file-locations "${@}" | while read line
+samweb list-file-locations "${@}" | tr ":" " "  > $TMPL
+
+# loop over unique file names
+cat $TMPL | awk '{print $3}' | sort | uniq \
+| while read FILENAME
 do
-   IFS=$'\t'
-   read -a strarr <<< "$line"
-   FILEPATH=`echo ${strarr[0]} | cut -d':' -f2`
-   FILESPEC=${FILEPATH}/${strarr[1]}
 
-   LOC=""
-   if [ $DOLOC ]; then
-       LOC=$( dcacheFileInfo -l $FILESPEC )
+   # list of locations, dcache first
+   FSS=$(cat $TMPL | awk '{if($3=="'$FILENAME'") print $1" "$2}' | sort )
+
+   TAPESPEC=$(echo "$FSS" | awk '{if($1=="enstore") print $2"/'$FILENAME'"}')
+   DISKSPEC=$(echo "$FSS" | awk '{if($1=="dcache") print $2"/'$FILENAME'"}')
+
+   if [ "$DISKSPEC" ]; then
+       FILESPEC="$DISKSPEC"
+       LOC="ONLINE"
+   else
+       FILESPEC="$TAPESPEC"
+       LOC=""
+       if [ $DOLOC ]; then
+           # have to see if tape-backed is on disk
+           LOC=$( dcacheFileInfo -l $FILESPEC )
+       fi
    fi
 
    if [ $DODISK ]; then
@@ -83,11 +102,12 @@ do
    fi
 
 done
-IFS=${OLDIFS}
 
 if [ $DOFIRST ]; then
     cat $TMPF
     rm -f $TMPF
 fi
+rm -f $TMPL
+rm -f $TMPF
 
 exit 0
