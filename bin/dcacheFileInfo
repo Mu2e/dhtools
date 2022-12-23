@@ -23,6 +23,7 @@ mcs.mu2e.DS-cosmic-mix-cat.MDC2018i.001002_00000001.art
      -l print locality
         NEARLINE - only on tape, ONLINE- on disk
         ONLINE_AND_NEARLINE means both
+     -d print create date in epoch seconds
      -v verbose
      -t interpret argument as file name only, and lookup the tape location
      -p interpret argument as file name only, and lookup the persis. location
@@ -39,17 +40,21 @@ mcs.mu2e.DS-cosmic-mix-cat.MDC2018i.001002_00000001.art
 
 DOCRC=""
 DOLOC=""
+DODATE=""
 VERBOSE=""
 LTAPE=""
 LDISK=""
 
-while getopts cltpvh OPT; do
+while getopts cldtpvh OPT; do
     case $OPT in
         c)
             DOCRC=yes
             ;;
         l)
             DOLOC=yes
+            ;;
+        d)
+            DODATE=yes
             ;;
         t)
             LTAPE=yes
@@ -94,23 +99,15 @@ if [[ -n "$LTAPE" || -n "$LDISK" ]]; then
         source /cvmfs/mu2e.opensciencegrid.org/setupmu2e-art.sh
         setup mu2efilename
     fi
-    if [ $LTAPE ]; then
-        FFS=$(echo -n $FFS | mu2eabsname_tape )
+    if [ "$LTAPE" ]; then
+        FFS=$(echo $FFS | mu2eabsname_tape )
     else
-        FFS=$(echo -n $FFS | mu2eabsname_disk )
+        FFS=$(echo $FFS | mu2eabsname_disk )
     fi
 fi
-#if [ "$STUB" != "/pnfs"  ]; then
-#    echo "ERROR - one pnfs filespec argument is required"
-#    exit 1
-#fi
 
 # canonical dCache filespec
 CFFS=$(echo $FFS | sed 's|/pnfs|/pnfs/fnal.gov/usr|' )
-
-
-
-#curl -L --capath /etc/grid-security/certificates --cert $FINV --cacert $FINV --key $FINV -X GET "https://fndca1.fnal.gov:3880/api/v1/namespace${CFFS}?checksum=true&locality=true"
 
 VS=" -s "
 [ $VERBOSE ] && VS=""
@@ -124,7 +121,7 @@ if [ $RC -ne 0 ]; then
     exit 1
 fi
 
-[ $VERBOSE ] && echo -n "$ANS"
+[ $VERBOSE ] && echo "$ANS"
 
 CRC=""
 if [ $DOCRC ]; then
@@ -133,9 +130,15 @@ fi
 
 LOC=""
 if [ $DOLOC ]; then
-  LOC=$( echo -n "$ANS" | grep fileLocality | tr -d '":,' | awk '{print$2}' )
+  LOC=$( echo -n "$ANS" | grep fileLocality | tr -d '":,' | awk '{print $2}' )
 fi
 
-[ ${CRC}${LOC} ] && echo $CRC $LOC
+DATE=""
+if [ $DODATE ]; then
+  DATEMS=$( echo -n "$ANS" | grep creationTime | tr -d '":,' | awk '{print $2}' )
+  DATE=$(($DATEMS/1000))
+fi
+
+[ ${CRC}${LOC} ] && echo $CRC $LOC $DATE
 
 exit 0
