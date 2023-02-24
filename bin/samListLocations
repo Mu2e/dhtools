@@ -64,24 +64,46 @@ fi
 
 TMPL=$(mktemp)
 
-samweb list-file-locations "${@}" | tr ":" " "  > $TMPL
+# this might be 
+# enstore:/pnfs/...  filename size
+# or if the user added --schema=root
+# xroot://...  enstore:/pnfs/..  filename  size
+
+# separate "disk" (enstore or dcache) from /pnfs/path
+# and put the URI last if it is there
+samweb list-file-locations "${@}" |  \
+awk '{if(NF==4) print $2" "$3" "$4" "$1; else print $1" "$2" "$3;}' | \
+sed -e 's/enstore:/enstore /' -e 's/dcache:/dcache /'   > $TMPL
 
 # loop over unique file names
+# TMPL is like
+# enstore /pnfs/path filename size <URI>
 cat $TMPL | awk '{print $3}' | sort | uniq \
 | while read FILENAME
 do
 
-   # list of locations, dcache first
-   FSS=$(cat $TMPL | awk '{if($3=="'$FILENAME'") print $1" "$2}' | sort )
+   # FSS is a list of locations, dcache first, like
+   # dcache /pnfs/path xrootd://...
+   FSS=$(cat $TMPL | awk '{if($3=="'$FILENAME'") print $1" "$2" "$5}' | sort )
 
-   TAPESPEC=$(echo "$FSS" | awk '{if($1=="enstore") print $2"/'$FILENAME'"}')
-   DISKSPEC=$(echo "$FSS" | awk '{if($1=="dcache") print $2"/'$FILENAME'"}')
+   # creates tape (/pnfs/mu2e/tape/.../filename) and disk filespecs
+   TAPESPEC=$(echo "$FSS" | awk '{ if($1=="enstore") print $2"/'$FILENAME'" }')
+   DISKSPEC=$(echo "$FSS" | awk '{ if($1=="dcache") print $2"/'$FILENAME'" }')
+   # find URI, if present
+   TAPEURI=$(echo "$FSS" | awk '{ if($1=="enstore") print $3 }')
+   # if no URI, then use pnfs path
+   [ -z "$TAPEURI" ] && TAPEURI="$TAPESPEC"
+   DISKURI=$(echo "$FSS" | awk '{ if($1=="dcache") print $3 }')
+   [ -z "$DISKURI" ] && DISKURI="$DISKSPEC"
 
+   FILEURI="none"
    if [ "$DISKSPEC" ]; then
        FILESPEC="$DISKSPEC"
+       FILEURI="$DISKURI"
        LOC="ONLINE"
    else
        FILESPEC="$TAPESPEC"
+       FILEURI="$TAPEURI"
        LOC=""
        if [ $DOLOC ]; then
            # have to see if tape-backed is on disk
@@ -90,15 +112,15 @@ do
    fi
 
    if [ $DODISK ]; then
-       [[ "$LOC" =~ "ONLINE" ]] && echo "$FILESPEC"
+       [[ "$LOC" =~ "ONLINE" ]] && echo "$FILEURI"
    elif [ $DOFIRST ]; then
        if [[ "$LOC" =~ "ONLINE" ]]; then
-           echo "$FILESPEC"
+           echo "$FILEURI"
        else
-           echo "$FILESPEC" >> $TMPF
+           echo "$FILEURI" >> $TMPF
        fi
    else
-       echo "$FILESPEC"
+       echo "$FILEURI"
    fi
 
 done
