@@ -25,6 +25,10 @@ usage() {
      Using the disk options requires a valid x509 cert
      and will cause the script to run slower ( ~200 files per min )
 
+     If nersc file locations are needed, then this must be run
+     with \"--filter-nersc\".  If both dcache and nersc locations
+     are present, dcache take priority over nersc.
+
      examples:
 
      samListLocations --defname dts.mu2e.CePlusEndpoint.MDC2020t.art
@@ -73,7 +77,7 @@ TMPL=$(mktemp)
 # and put the URI last if it is there
 samweb list-file-locations "${@}" |  \
 awk '{if(NF==4) print $2" "$3" "$4" "$1; else print $1" "$2" "$3;}' | \
-sed -e 's/enstore:/enstore /' -e 's/dcache:/dcache /'   > $TMPL
+sed -e 's/enstore:/enstore /' -e 's/dcache:/dcache /' -e 's/nersc:/nersc /'   > $TMPL
 
 # loop over unique file names
 # TMPL is like
@@ -89,19 +93,22 @@ do
    # creates tape (/pnfs/mu2e/tape/.../filename) and disk filespecs
    TAPESPEC=$(echo "$FSS" | awk '{ if($1=="enstore") print $2"/'$FILENAME'" }')
    DISKSPEC=$(echo "$FSS" | awk '{ if($1=="dcache") print $2"/'$FILENAME'" }')
+   NERSCSPEC=$(echo "$FSS" | awk '{ if($1=="nersc") print $2"/'$FILENAME'" }')
    # find URI, if present
    TAPEURI=$(echo "$FSS" | awk '{ if($1=="enstore") print $3 }')
    # if no URI, then use pnfs path
    [ -z "$TAPEURI" ] && TAPEURI="$TAPESPEC"
    DISKURI=$(echo "$FSS" | awk '{ if($1=="dcache") print $3 }')
    [ -z "$DISKURI" ] && DISKURI="$DISKSPEC"
+   # nersc only has NFS access
+   NERSCURI=$NERSCSPEC
 
    FILEURI="none"
    if [ "$DISKSPEC" ]; then
        FILESPEC="$DISKSPEC"
        FILEURI="$DISKURI"
        LOC="ONLINE"
-   else
+   elif [ "$TAPESPEC" ]; then
        FILESPEC="$TAPESPEC"
        FILEURI="$TAPEURI"
        LOC=""
@@ -109,6 +116,11 @@ do
            # have to see if tape-backed is on disk
            LOC=$( dcacheFileInfo -l $FILESPEC )
        fi
+   elif [ "$NERSCSPEC" ]; then
+       # only consider nersc location if it is the only one
+       FILESPEC="$NERSCSPEC"
+       FILEURI="$NERSCURI"
+       LOC="ONLINE"
    fi
 
    if [ $DODISK ]; then
