@@ -25,19 +25,20 @@ DS="$1"
 TAG="$2"
 NSPL=$3
 
-# must be ready to use sam_web_client
-# which needs a grid cert
-if ! grid-proxy-info >& /dev/null ; then
-  echo "ERROR - grid certificate not found.  Please:
-  kinit
-  kx509"
-  exit 2
+RC=0
+if [ -z "$MU2E" ]; then
+    echo "please setup mu2e"
+    RC=1
 fi
-
-export SAM_EXPERIMENT=mu2e
-
-# will need sam_web_client, setup if not already there
-[ -z "$SETUP_SAM_WEB_CLIENT" ] && setup sam_web_client 
+if ! command -v samweb >& /dev/null; then
+    echo "please setup sam-web-client"
+    RC=1
+fi
+if ! seeToken >& /dev/null; then
+    echo "please refresh your token"
+    RC=1
+fi
+[ $RC -ne 0 ] && exit 1
 
 NFILES=`samweb count-files "dh.dataset=$DS"`
 SNAPNO=`samweb take-snapshot $DS`

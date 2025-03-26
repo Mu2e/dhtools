@@ -57,22 +57,25 @@ while getopts d:f:n:o:s:h OPT; do
      esac
 done
 
-
-# must be ready to use sam_web_client
-# which needs a grid cert
-if ! grid-proxy-info >& /dev/null ; then
-  echo "ERROR - grid certificate not found.  Please:
-  kinit
-  kx509"
-  exit 2
+RC=0
+if [ -z "$MU2E" ]; then
+    echo "please setup mu2e"
+    RC=1
 fi
+if ! command -v samweb >& /dev/null; then
+    echo "please setup sam-web-client"
+    RC=1
+fi
+if ! command -v ifdh >& /dev/null; then
+    echo "please setup ifdh"
+    RC=1
+fi
+if ! seeToken >& /dev/null; then
+    echo "please refresh your token"
+    RC=1
+fi
+[ $RC -ne 0 ] && exit 1
 
-export SAM_EXPERIMENT=mu2e
-
-# will need sam_web_client, setup if not already there
-[ -z "$SETUP_SAM_WEB_CLIENT" ] && setup sam_web_client 
-# will need ifdh to do the copy
-[ -z "$SETUP_IFDHC" ] && setup ifdhc
 
 # write the sam file names to TMPF
 
@@ -104,7 +107,10 @@ fi
 N=0
 while read FN
 do
-  FNF=`samweb get-file-access-url --location=enstore $FN`
+    FNF=`samweb get-file-access-url --location=dcache --schema=http $FN`
+    if [ -z "$FNF" ]; then
+        FNF=`samweb get-file-access-url --location=enstore --schema=http $FN`
+    fi
   if [ -z "$FNF" ]; then
       echo "ERROR - SAM had no location for $FN"
       exit 2
