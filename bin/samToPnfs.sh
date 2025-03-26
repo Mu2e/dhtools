@@ -111,13 +111,16 @@ then
   exit 1
 fi
 
-# will need sam_web_client, setup if not already there
-[ -z "$SETUP_SAM_WEB_CLIENT" ] && setup sam_web_client 
-if [ -z "$SETUP_SAM_WEB_CLIENT" ]; then
-  echo "ERROR - could not setup sam_web_client"
-  exit 1
+RC=0
+if [ -z "$MU2E" ]; then
+    echo "please setup mu2e"
+    RC=1
 fi
-
+if ! command -v samweb >& /dev/null; then
+    echo "please setup sam-web-client"
+    RC=1
+fi
+[ $RC -ne 0 ] && exit 1
 
 
 # if it is a file containing file names

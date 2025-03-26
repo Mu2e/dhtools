@@ -42,14 +42,17 @@ while getopts h OPT; do
      esac
 done
 
-export SAM_EXPERIMENT=mu2e
-
-# will need sam_web_client, setup if not already there
-[ -z "$SETUP_SAM_WEB_CLIENT" ] && setup sam_web_client 
-if [ -z "$SETUP_SAM_WEB_CLIENT" ]; then
-  echo "ERROR - could not setup sam_web_client"
-  exit 1
+RC=0
+if [ -z "$MU2E" ]; then
+    echo "please setup mu2e"
+    RC=1
 fi
+if ! command -v samweb >& /dev/null; then
+    echo "please setup sam-web-client"
+    RC=1
+fi
+[ $RC -ne 0 ] && exit 1
+
 
 DS="$1"
 if [ "$DS" == "" ]; then
@@ -74,10 +77,11 @@ while [[ $NN -le 1000 && $NN -le $NT ]]; do
     # take random
     SF=`cat $TMP | awk 'BEGIN{srand(); i=int('$NT'*rand())+1}{if(NR==i) print $0}'`
   fi
-  SLFS=`samweb locate-file $SF`
-  #echo $SLFS
+  SLFS=`samweb locate-file $SF | grep enstore`
+  #echo SLFS=$SLFS
   PNFSDIR=` echo $SLFS | awk -F: '{print $2}' | sed -e 's/([^()]*)//g' `
-  #echo $PNFS
+  #echo PNFS=$PNFS
+  #echo SF=$SF
   ANS=`cat $PNFSDIR/'.(get)('$SF')(locality)'`
   #echo $ANS
   if [[ "$ANS" =~ "ONLINE" ]]; then

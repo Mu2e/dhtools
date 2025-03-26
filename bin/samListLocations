@@ -59,12 +59,25 @@ elif [ "$1" == "-f" ]; then
     TMPF=$(mktemp)
 fi
 
-[ -z "$MU2E" ] && setup mu2e
-[ -z "$SETUP_SAM_WEB_CLIENT" ] && setup sam_web_client
-[ -z "$SETUP_DHTOOLS" ] && setup dhtools
-if ! voms-proxy-info > /dev/null 2>&1 ; then
-    vomsCert > /dev/null 2>&1
+RC=0
+if [ -z "$MU2E" ]; then
+    echo "please setup mu2e"
+    RC=1
 fi
+if ! command -v samweb >& /dev/null; then
+    echo "please setup sam-web-client"
+    RC=1
+fi
+if ! command -v dcacheFileInfo >& /dev/null; then
+    echo "please setup dhtools"
+    RC=1
+fi
+if ! seeToken >& /dev/null; then
+    echo "please refresh your token"
+    RC=1
+fi
+[ $RC -ne 0 ] && exit 1
+
 
 TMPL=$(mktemp)
 
